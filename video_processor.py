@@ -28,7 +28,7 @@ class RoadDetector:
         prediction = prediction[0] * self.max_RGB
 
         prediction = prediction.astype('uint8')
-        prediction = cv2.cvtColor(prediction, cv2.COLOR_RGB2GRAY)
+        # prediction = cv2.cvtColor(prediction, cv2.COLOR_RGB2GRAY)
         processed = cv2.resize(prediction, (original_width, original_height), interpolation=cv2.INTER_LANCZOS4)
         _, mask = cv2.threshold(processed,
                                 self.mask_threshold,
@@ -52,6 +52,12 @@ def simple_test():
 
 def process_video(path):
     cam = cv2.VideoCapture(path)
+    # Instal codecs using    $ sudo apt-get install ubuntu-restricted-extras
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    wr_width = 1024  # 640
+    wr_height = 576  # 360
+    # out = cv2.VideoWriter('output.avi', -1, 20.0, (wr_width, wr_height))
+    out = cv2.VideoWriter('output.avi', fourcc, 20.0, (wr_width, wr_height))
     detector = RoadDetector()
 
     while True:
@@ -60,22 +66,29 @@ def process_video(path):
             print("No video frame captured: video at end or no video present.")
             quit()
 
+        original = cv2.resize(original, (wr_width, wr_height))
+
         dataForNN = cv2.cvtColor(original, cv2.COLOR_BGR2RGB)
         prediction = detector.predict(dataForNN)
 
-        alpha = 0.2
+        alpha = 0.3
         combined = np.array(original, dtype=np.uint8)
         color_fill = np.array(original, dtype=np.uint8)
         color_fill[:, :] = [255, 50, 255]
         color_fill = cv2.bitwise_and(color_fill, color_fill, mask=prediction)
         cv2.addWeighted(combined, 1 - alpha, color_fill, alpha, 0, combined)
+
         cv2.imshow('Prediction', combined)
+
+        out.write(combined)
 
         # cv2.imshow('Origin', cv2.cvtColor(dataForNN, cv2.COLOR_RGB2BGR))
         # cv2.imshow('Roadmask', prediction)
 
         if cv2.waitKey(1) == 27:
             break  # esc to quit
+    cam.release()
+    out.release()
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':

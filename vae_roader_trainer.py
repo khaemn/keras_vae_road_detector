@@ -32,13 +32,15 @@ def load_data(path=train_data_dir):
 
             _x = image[:, :img_width]
             _y = image[:, img_width:]
-            _y = cv2.resize(_y, (160, 96))  # !!! to fit with upsampling KERAS layers
-            # Adding normalized data to datasets:
             _x = _x.astype('float32')
             _x = _x / 255
+            X.append(_x)
+
+            _y = cv2.resize(_y, (160, 96))  # !!! to fit with upsampling KERAS layers
+            _y = cv2.cvtColor(_y, cv2.COLOR_RGB2GRAY)
             _y = _y.astype('float32')
             _y = _y / 255
-            X.append(_x)
+            _y = _y.reshape((96, 160, 1))
             Y.append(_y)
     X = np.array(X)
     Y = np.array(Y)
@@ -55,16 +57,12 @@ x = MaxPooling2D((2, 2), padding='same')(x)
 x = Conv2D(64, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_3')(x)
 x = MaxPooling2D((2, 2), padding='same')(x)
 x = Conv2D(128, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_4')(x)
-#x = MaxPooling2D((2, 2), padding='same')(x)
-#x = Conv2D(512, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_5')(x)
 
 encoded = MaxPooling2D((2, 2), padding='same')(x)
 
-# at this point the representation is (?, ?, ?)
+# at this point the representation is (6, 10, 128)
 
 x = Conv2D(128, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_1')(encoded)
-# x = UpSampling2D((2, 2))(x)
-# x = Conv2D(256, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_2')(x)
 x = UpSampling2D((2, 2))(x)
 x = Conv2D(64, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_3')(x)
 x = UpSampling2D((2, 2))(x)
@@ -73,7 +71,7 @@ x = UpSampling2D((2, 2))(x)
 x = Conv2D(16, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_5')(x)
 x = UpSampling2D((2, 2))(x)
 
-decoded = Conv2D(3, (3, 3), activation='sigmoid', padding='same')(x)
+decoded = Conv2D(1, (3, 3), activation='sigmoid', padding='same')(x)
 
 autoencoder = Model(input_img, decoded)
 autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy',
@@ -81,7 +79,7 @@ autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy',
 
 print("AE info:", autoencoder.summary())
 
-_TRAIN_ME = False
+_TRAIN_ME = True
 if _TRAIN_ME:
     X, Y = load_data()
     for i in range(0, iterations):
@@ -121,14 +119,13 @@ for i in range(0, len(test_images)):
     _input = test_images[i]
     (height, width, _) = _input.shape
     _input = cv2.cvtColor(_input, cv2.COLOR_RGB2BGR)
-    processed = cv2.resize(output, (width, height))
+    processed = cv2.resize(output, (width, height), interpolation=cv2.INTER_LINEAR)
     cv2.imshow('Input', _input)
     cv2.imshow('Output', processed)
 
     alpha = 0.2
     _, mask = cv2.threshold(processed, 200, 255, cv2.THRESH_BINARY)
     mask = mask.astype(np.uint8)
-    mask = cv2.cvtColor(mask, cv2.COLOR_RGB2GRAY)
     combined = np.array(_input, dtype=np.uint8)
     color_fill = _input
     color_fill[:, :] = [255, 50, 255]
