@@ -8,21 +8,23 @@ class RoadDetector:
     model = Sequential()
     max_RGB = 255
 
-    input_height = 90
-    input_width = 160
+    input_height = 180  # 90
+    input_width = 320  # 160
     mask_threshold = 200
 
     def __init__(self, modelFile=_MODEL_FILENAME):
         self.model = load_model(modelFile)
 
     def predict(self, _input):
-        (original_height, original_width, _) = _input.shape
+        (original_height, original_width) = _input.shape
+        # _input = cv2.cvtColor(_input, cv2.COLOR_RGB2GRAY)
         # Resizing to acceptable size
         resized = cv2.resize(_input, (self.input_width, self.input_height))
         # Normalization
         normalized = resized / self.max_RGB
         # Prediction
         model_input = np.array([normalized])
+        model_input = model_input.reshape((1, self.input_height, self.input_width, 1))
         # Only one frame is used for prediction
         prediction = self.model.predict(model_input)
         prediction = prediction[0] * self.max_RGB
@@ -68,7 +70,7 @@ def process_video(path):
 
         original = cv2.resize(original, (wr_width, wr_height))
 
-        dataForNN = cv2.cvtColor(original, cv2.COLOR_BGR2RGB)
+        dataForNN = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
         prediction = detector.predict(dataForNN)
 
         alpha = 0.3
@@ -80,7 +82,7 @@ def process_video(path):
 
         cv2.imshow('Prediction', combined)
 
-        out.write(combined)
+        # out.write(combined)
 
         # cv2.imshow('Origin', cv2.cvtColor(dataForNN, cv2.COLOR_RGB2BGR))
         # cv2.imshow('Roadmask', prediction)
@@ -92,4 +94,4 @@ def process_video(path):
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    process_video('video/road6.mp4')
+    process_video('video/road8.3gp')

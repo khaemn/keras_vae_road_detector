@@ -12,7 +12,7 @@ random.seed(777)
 _MODEL_FILENAME = 'models/model_vae_roader.h5'
 
 # dimensions of our images.
-img_width, img_height = 160, 90
+img_width, img_height = 320, 180  # 160, 90
 
 train_data_dir = 'dataset/train/X'
 validation_data_dir = 'dataset/validation/X'
@@ -28,19 +28,22 @@ def load_data(path=train_data_dir):
     for root_back, dirs_back, files_back in os.walk(path):
         for _file in files_back:
             image = cv2.imread(os.path.join(path, _file))
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
             _x = image[:, :img_width]
             _y = image[:, img_width:]
             _x = _x.astype('float32')
             _x = _x / 255
+            _x = _x.reshape((img_height, img_width, 1))
             X.append(_x)
 
-            _y = cv2.resize(_y, (160, 96))  # !!! to fit with upsampling KERAS layers
-            _y = cv2.cvtColor(_y, cv2.COLOR_RGB2GRAY)
+            adjusted_height = 192  # 96
+            #  _y = cv2.resize(_y, (img_width, adjusted_height))  # !!! to fit with upsampling KERAS layers
+            _y = cv2.resize(_y, (img_width, adjusted_height))
+            #_y = cv2.cvtColor(_y, cv2.COLOR_RGB2GRAY)
             _y = _y.astype('float32')
             _y = _y / 255
-            _y = _y.reshape((96, 160, 1))
+            _y = _y.reshape((adjusted_height, img_width, 1))
             Y.append(_y)
     X = np.array(X)
     Y = np.array(Y)
@@ -48,7 +51,8 @@ def load_data(path=train_data_dir):
 
 # Creating the Model
 
-input_img = Input(shape=(img_height, img_width, 3))  # adapt this if using `channels_first` image data format
+#input_img = Input(shape=(img_height, img_width, 3))  # adapt this if using `channels_first` image data format
+input_img = Input(shape=(img_height, img_width, 1))  # adapt this if using `channels_first` image data format
 
 x = Conv2D(16, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_1')(input_img)
 x = MaxPooling2D((2, 2), padding='same')(x)

@@ -19,10 +19,11 @@ _X_TRAIN_DIR = os.path.join(_TRAIN_DIR, 'X')
 _Y_TRAIN_DIR = os.path.join(_TRAIN_DIR, 'Y')
 
 _ATTACH_Y_TO_X = True
+_CONVERT_TO_GRAYSCALE = True
 
 # Usual resolutuion of HD cam is 1280*720, we use /4 resolution here to save performance
-_X_WIDTH = 160  # 320
-_X_HEIGHT = 90  # 180
+_X_WIDTH = 320  # 160  # 320
+_X_HEIGHT = 180  # 90  # 180
 
 # I think that road heatmap resolution of R/20 will be enough
 # _Y_WIDTH = 64
@@ -55,22 +56,32 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT)):
         print('Processing file', iteration, 'of', total_files)
         iteration += 1
         x_img = cv2.imread(os.path.join(_X_INPUT_DIR, filename))
-        x_img = cv2.cvtColor(x_img, cv2.COLOR_BGR2RGB)
+        convertation_color_space = cv2.COLOR_BGR2GRAY if _CONVERT_TO_GRAYSCALE else cv2.COLOR_BGR2RGB
+        x_img = cv2.cvtColor(x_img, convertation_color_space)
 
         y_img = cv2.imread(os.path.join(_Y_INPUT_DIR, filename))
-        y_img = cv2.cvtColor(y_img, cv2.COLOR_BGR2RGB)
+        y_img = cv2.cvtColor(y_img, convertation_color_space)
 
         assert x_img.shape == y_img.shape
-        (height, width, depth) = x_img.shape
+        depth = 1
+        if _CONVERT_TO_GRAYSCALE:
+            (height, width) = x_img.shape
+        else:
+            (height, width, depth) = x_img.shape
 
         x_resized = cv2.resize(x_img, (gen_w, gen_h), interpolation=cv2.INTER_LINEAR)
         y_resized = cv2.resize(y_img, (gen_w, gen_h), interpolation=cv2.INTER_LINEAR)
 
         if _ATTACH_Y_TO_X:
             # Concatenating input with expected output
-            output = np.zeros((gen_h, gen_w*2, depth), dtype='uint8')
-            output[:, :_X_WIDTH] = x_resized
-            output[:, _X_WIDTH:] = y_resized
+            if _CONVERT_TO_GRAYSCALE:
+                output = np.zeros((gen_h, gen_w * 2), dtype='uint8')
+                output[:, :_X_WIDTH] = x_resized
+                output[:, _X_WIDTH:] = y_resized
+            else:
+                output = np.zeros((gen_h, gen_w*2, depth), dtype='uint8')
+                output[:, :_X_WIDTH] = x_resized
+                output[:, _X_WIDTH:] = y_resized
 
             output = Image.fromarray(output)
             output_path = os.path.join(_X_TRAIN_DIR, filename)
