@@ -16,10 +16,10 @@ img_width, img_height = 320, 180  # 160, 90
 
 train_data_dir = 'dataset/train/X'
 validation_data_dir = 'dataset/validation/X'
-nb_train_samples = 200
+nb_train_samples = 500
 nb_validation_samples = 20
-epochs = 20
-iterations = 10
+epochs = 5
+iterations = 5
 batch_size = 32
 
 # Data loading should be reworked to keras Generators to improve perf.
@@ -56,23 +56,32 @@ input_img = Input(shape=(img_height, img_width, 1))  # adapt this if using `chan
 
 x = Conv2D(16, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_1')(input_img)
 x = MaxPooling2D((2, 2), padding='same')(x)
-x = Conv2D(32, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_2')(x)
+
+x = Conv2D(16, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_2')(x)
 x = MaxPooling2D((2, 2), padding='same')(x)
-x = Conv2D(64, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_3')(x)
+
+x = Conv2D(32, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_3')(x)
 x = MaxPooling2D((2, 2), padding='same')(x)
-x = Conv2D(128, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_4')(x)
+
+x = Conv2D(64, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_4')(x)
+x = MaxPooling2D((2, 2), padding='same')(x)
+x = Dropout(0.1)(x)
+
+x = Conv2D(128, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_5')(x)
 
 encoded = MaxPooling2D((2, 2), padding='same')(x)
 
 # at this point the representation is (6, 10, 128)
 
-x = Conv2D(128, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_1')(encoded)
+x = Conv2D(128, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_5')(encoded)
 x = UpSampling2D((2, 2))(x)
-x = Conv2D(64, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_3')(x)
+x = Conv2D(64, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_4')(x)
 x = UpSampling2D((2, 2))(x)
-x = Conv2D(32, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_4')(x)
+x = Conv2D(32, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_3')(x)
 x = UpSampling2D((2, 2))(x)
-x = Conv2D(16, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_5')(x)
+x = Conv2D(16, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_2')(x)
+x = UpSampling2D((2, 2))(x)
+x = Conv2D(16, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_1')(x)
 x = UpSampling2D((2, 2))(x)
 
 decoded = Conv2D(1, (3, 3), activation='sigmoid', padding='same')(x)

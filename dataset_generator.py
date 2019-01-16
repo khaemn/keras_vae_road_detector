@@ -58,9 +58,11 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT)):
         x_img = cv2.imread(os.path.join(_X_INPUT_DIR, filename))
         convertation_color_space = cv2.COLOR_BGR2GRAY if _CONVERT_TO_GRAYSCALE else cv2.COLOR_BGR2RGB
         x_img = cv2.cvtColor(x_img, convertation_color_space)
+        (origin_h, origin_w) = x_img.shape
 
         y_img = cv2.imread(os.path.join(_Y_INPUT_DIR, filename))
         y_img = cv2.cvtColor(y_img, convertation_color_space)
+        y_img = cv2.resize(y_img, (origin_w, origin_h))
 
         assert x_img.shape == y_img.shape
         depth = 1

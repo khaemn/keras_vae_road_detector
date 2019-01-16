@@ -10,7 +10,9 @@ class RoadDetector:
 
     input_height = 180  # 90
     input_width = 320  # 160
-    mask_threshold = 200
+    # N thresholds will produce N masks of N colors
+    mask_thresholds = [140, 200, 240]
+    fill_colors = [[255, 50, 255], [255, 255, 50], [50, 255, 255]]
 
     def __init__(self, modelFile=_MODEL_FILENAME):
         self.model = load_model(modelFile)
@@ -30,15 +32,8 @@ class RoadDetector:
         prediction = prediction[0] * self.max_RGB
 
         prediction = prediction.astype('uint8')
-        # prediction = cv2.cvtColor(prediction, cv2.COLOR_RGB2GRAY)
-        processed = cv2.resize(prediction, (original_width, original_height), interpolation=cv2.INTER_LANCZOS4)
-        _, mask = cv2.threshold(processed,
-                                self.mask_threshold,
-                                self.max_RGB,
-                                cv2.THRESH_BINARY)
-        mask = mask.astype(np.uint8)
 
-        return mask
+        return prediction
 
 def simple_test():
     detector = RoadDetector()
@@ -73,16 +68,42 @@ def process_video(path):
         dataForNN = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
         prediction = detector.predict(dataForNN)
 
+        rawmask = prediction.copy()
+        #cv2.imshow('Rawmask', rawmask)
+        rawmask_size = 0.25
+        rawmask = cv2.resize(rawmask, (int(wr_width * rawmask_size), int(wr_height * rawmask_size)))
+        rawmask = cv2.cvtColor(rawmask, cv2.COLOR_GRAY2BGR)
+
+        # prediction = cv2.cvtColor(prediction, cv2.COLOR_RGB2GRAY)
+        processed = cv2.resize(prediction, (wr_width, wr_height), interpolation=cv2.INTER_LANCZOS4)
+        masking_threshold = detector.mask_thresholds[0]
+        masking_max = detector.max_RGB
+        _, mask = cv2.threshold(processed,
+                                masking_threshold,
+                                masking_max,
+                                cv2.THRESH_BINARY)
+        mask = mask.astype(np.uint8)
+
         alpha = 0.3
         combined = np.array(original, dtype=np.uint8)
         color_fill = np.array(original, dtype=np.uint8)
-        color_fill[:, :] = [255, 50, 255]
-        color_fill = cv2.bitwise_and(color_fill, color_fill, mask=prediction)
+        color_fill[:, :] = detector.fill_colors[0]
+        color_fill = cv2.bitwise_and(color_fill, color_fill, mask=mask)
         cv2.addWeighted(combined, 1 - alpha, color_fill, alpha, 0, combined)
+
+        # overlaying a raw mask image to top left corner
+        combined[:rawmask.shape[0], :rawmask.shape[1]] = rawmask
+
+        # Printing the threshold value
+        text = "Threshold %02d of %02d" % (masking_threshold, masking_max)
+        cv2.putText(combined, text, (int(wr_width / 3), 30),
+                    cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(combined, text, (int(wr_width / 3) + 2, 30 + 2),
+                    cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 255), 1, cv2.LINE_AA)
 
         cv2.imshow('Prediction', combined)
 
-        # out.write(combined)
+        out.write(combined)
 
         # cv2.imshow('Origin', cv2.cvtColor(dataForNN, cv2.COLOR_RGB2BGR))
         # cv2.imshow('Roadmask', prediction)
@@ -94,4 +115,9 @@ def process_video(path):
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    process_video('video/road8.3gp')
+    process_video('video/road7.3gp')
+    #process_video('video/road8.3gp')
+
+    #process_video('video/road1.mp4')
+    #process_video('video/road6.mp4')
+    #process_video('video/road_x.mp4')
