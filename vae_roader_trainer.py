@@ -50,41 +50,47 @@ def load_data(path=train_data_dir):
     return X, Y
 
 # Creating the Model
+model_init = "he_uniform"
 
 #input_img = Input(shape=(img_height, img_width, 3))  # adapt this if using `channels_first` image data format
 input_img = Input(shape=(img_height, img_width, 1))  # adapt this if using `channels_first` image data format
 
-x = Conv2D(16, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_1')(input_img)
+x = Conv2D(16, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_1')(input_img)
 x = MaxPooling2D((2, 2), padding='same')(x)
 
-x = Conv2D(16, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_2')(x)
+x = Conv2D(16, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_2')(x)
 x = MaxPooling2D((2, 2), padding='same')(x)
 
-x = Conv2D(32, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_3')(x)
+x = Conv2D(32, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_3')(x)
 x = MaxPooling2D((2, 2), padding='same')(x)
 
-x = Conv2D(64, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_4')(x)
+x = Conv2D(32, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_4')(x)
+x = MaxPooling2D((2, 2), padding='same')(x)
+
+x = Conv2D(64, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_5')(x)
 x = MaxPooling2D((2, 2), padding='same')(x)
 x = Dropout(0.1)(x)
 
-x = Conv2D(128, (3, 3), activation='relu', padding='same', name='Encoder_CONV2D_5')(x)
+x = Conv2D(128, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_6')(x)
 
 encoded = MaxPooling2D((2, 2), padding='same')(x)
 
 # at this point the representation is (6, 10, 128)
 
-x = Conv2D(128, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_5')(encoded)
+x = Conv2D(128, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_6')(encoded)
 x = UpSampling2D((2, 2))(x)
-x = Conv2D(64, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_4')(x)
+x = Conv2D(64, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_5')(x)
 x = UpSampling2D((2, 2))(x)
-x = Conv2D(32, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_3')(x)
+x = Conv2D(32, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_4')(x)
 x = UpSampling2D((2, 2))(x)
-x = Conv2D(16, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_2')(x)
+x = Conv2D(32, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_3')(x)
 x = UpSampling2D((2, 2))(x)
-x = Conv2D(16, (3, 3), activation='relu', padding='same', name='Decoder_CONV2D_1')(x)
+x = Conv2D(16, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_2')(x)
+x = UpSampling2D((2, 2))(x)
+x = Conv2D(16, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_1')(x)
 x = UpSampling2D((2, 2))(x)
 
-decoded = Conv2D(1, (3, 3), activation='sigmoid', padding='same')(x)
+decoded = Conv2D(1, (3, 3), activation='sigmoid', kernel_initializer=model_init, padding='same')(x)
 
 autoencoder = Model(input_img, decoded)
 autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy',

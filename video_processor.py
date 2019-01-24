@@ -2,7 +2,9 @@ from keras.models import Sequential, load_model
 import numpy as np
 import cv2
 
-_MODEL_FILENAME = 'models/model_vae_roader.h5'
+#_MODEL_FILENAME = 'models/model_vae_roader.h5'
+_MODEL_FILENAME = 'models/model_yolike_roader.h5'
+
 
 class RoadDetector:
     model = Sequential()
@@ -11,7 +13,7 @@ class RoadDetector:
     input_height = 180  # 90
     input_width = 320  # 160
     # N thresholds will produce N masks of N colors
-    mask_thresholds = [140, 200, 240]
+    mask_thresholds = [180, 200, 240]
     fill_colors = [[255, 50, 255], [255, 255, 50], [50, 255, 255]]
 
     def __init__(self, modelFile=_MODEL_FILENAME):
@@ -64,6 +66,9 @@ def process_video(path):
             quit()
 
         original = cv2.resize(original, (wr_width, wr_height))
+
+        # flipping for some interesting results
+        #original = cv2.flip(original, 0)
 
         dataForNN = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
         prediction = detector.predict(dataForNN)
@@ -119,5 +124,6 @@ if __name__ == '__main__':
     #process_video('video/road8.3gp')
 
     #process_video('video/road1.mp4')
+    #process_video('video/road2.mp4')
     #process_video('video/road6.mp4')
     #process_video('video/road_x.mp4')
