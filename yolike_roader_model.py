@@ -58,47 +58,58 @@ if __name__ == "__main__":
     #input_img = Input(shape=(img_height, img_width, 3))  # adapt this if using `channels_first` image data format
     input_img = Input(shape=(img_height, img_width, 1))  # adapt this if using `channels_first` image data format
 
-    x = Conv2D(16, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_1')(input_img)
-    # x = LeakyReLU(alpha=leak_alpha)(x)
+    x = Conv2D(16, (3, 3), kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_1')(input_img)
+    x = LeakyReLU(alpha=leak_alpha)(x)
     x = MaxPooling2D((2, 2), padding='same')(x)
 
-    x = Conv2D(32, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_2')(x)
-    # x = LeakyReLU(alpha=leak_alpha)(x)
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_2')(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
     x = MaxPooling2D((2, 2), padding='same')(x)
 
-    x = Conv2D(64, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_3')(x)
-    # x = LeakyReLU(alpha=leak_alpha)(x)
+    x = Conv2D(64, (3, 3), kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_3')(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
     x = MaxPooling2D((2, 2), padding='same')(x)
 
-    x = Dropout(0.5)(x)
-
-    x = Conv2D(128, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_4')(x)
-    # x = LeakyReLU(alpha=leak_alpha)(x)
+    x = Conv2D(128, (3, 3), kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_4')(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
     x = MaxPooling2D((2, 2), padding='same')(x)
 
-    x = Conv2D(256, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_5')(x)
-    # x = LeakyReLU(alpha=leak_alpha)(x)
+    x = Conv2D(256, (3, 3), kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_5')(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
     x = MaxPooling2D((2, 2), padding='same')(x)
 
-    x = Conv2D(512, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_6')(x)
+    x = Conv2D(512, (3, 3), kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_6')(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
 
     encoded = MaxPooling2D((2, 2), padding='same')(x)
 
+    encoded = Dropout(0.5)(encoded)
+
     # at this point the representation is (6, 10, 128)
 
-    x = Conv2D(512, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_6')(encoded)
-    x = UpSampling2D((2, 2))(x)
-    x = Conv2D(256, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_5')(x)
-    x = UpSampling2D((2, 2))(x)
-    x = Conv2D(128, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_4')(x)
-    x = UpSampling2D((2, 2))(x)
-    x = Conv2D(64, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_3')(x)
-    x = UpSampling2D((2, 2))(x)
-    x = Conv2D(32, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_2')(x)
-    x = UpSampling2D((2, 2))(x)
-    x = Conv2D(16, (3, 3), activation='relu', kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_1')(x)
+    x = Conv2D(512, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_6')(encoded)
+    x = LeakyReLU(alpha=leak_alpha)(x)
     x = UpSampling2D((2, 2))(x)
 
+    x = Conv2D(256, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_5')(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
+    x = UpSampling2D((2, 2))(x)
+
+    x = Conv2D(128, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_4')(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
+    x = UpSampling2D((2, 2))(x)
+
+    x = Conv2D(64, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_3')(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
+    x = UpSampling2D((2, 2))(x)
+
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_2')(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
+    x = UpSampling2D((2, 2))(x)
+
+    x = Conv2D(16, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_1')(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
+    x = UpSampling2D((2, 2))(x)
 
     decoded = Conv2D(1, (3, 3), activation='sigmoid', kernel_initializer=model_init, padding='same')(x)
 
