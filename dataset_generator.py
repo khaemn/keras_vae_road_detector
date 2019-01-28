@@ -11,8 +11,10 @@ import cv2
     Heatmapped images usually are about 1280*720 (full-hd camera) images, heatmapped by OCV_RND project.
 '''
 
-_X_INPUT_DIR = 'heatmapping/heatmap_src'
-_Y_INPUT_DIR = 'heatmapping/heatmap_out'
+# _X_INPUT_DIR = 'heatmapping/heatmap_src'
+_X_INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/road6-maskeds/images'
+# _Y_INPUT_DIR = 'heatmapping/heatmap_out'
+_Y_INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/road6-maskeds/masks'
 _DATASET_DIR = 'dataset'
 _TRAIN_DIR = os.path.join(_DATASET_DIR, 'train')
 _X_TRAIN_DIR = os.path.join(_TRAIN_DIR, 'X')
@@ -20,6 +22,7 @@ _Y_TRAIN_DIR = os.path.join(_TRAIN_DIR, 'Y')
 
 _ATTACH_Y_TO_X = True
 _CONVERT_TO_GRAYSCALE = True
+_FLIP_HALVES = True
 
 # Usual resolutuion of HD cam is 1280*720, we use /4 resolution here to save performance
 _X_WIDTH = 320  # 160  # 320
@@ -65,6 +68,7 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT)):
         y_img = cv2.resize(y_img, (origin_w, origin_h))
 
         assert x_img.shape == y_img.shape
+
         depth = 1
         if _CONVERT_TO_GRAYSCALE:
             (height, width) = x_img.shape
@@ -73,6 +77,19 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT)):
 
         x_resized = cv2.resize(x_img, (gen_w, gen_h), interpolation=cv2.INTER_LINEAR)
         y_resized = cv2.resize(y_img, (gen_w, gen_h), interpolation=cv2.INTER_LINEAR)
+
+        if _FLIP_HALVES:
+            hor_middle = int(gen_w / 2)
+
+            flipped_x = x_resized.copy()
+            flipped_x[:, :hor_middle] = x_resized[:, hor_middle:]
+            flipped_x[:, hor_middle:] = x_resized[:, :hor_middle]
+            x_resized = flipped_x
+
+            flipped_y = y_resized.copy()
+            flipped_y[:, :hor_middle] = y_resized[:, hor_middle:]
+            flipped_y[:, hor_middle:] = y_resized[:, :hor_middle]
+            y_resized = flipped_y
 
         if _ATTACH_Y_TO_X:
             # Concatenating input with expected output
@@ -87,6 +104,8 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT)):
 
             output = Image.fromarray(output)
             output_path = os.path.join(_X_TRAIN_DIR, filename)
+            if _FLIP_HALVES:
+                output_path = os.path.join(_X_TRAIN_DIR, 'halved-' + filename)
             output.save(output_path)
         else:
             x_out, y_out = Image.fromarray(x_resized), Image.fromarray(y_resized)

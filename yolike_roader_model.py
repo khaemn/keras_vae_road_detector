@@ -1,7 +1,7 @@
 # https://blog.keras.io/building-autoencoders-in-keras.html
 
 from keras.layers import Input, Dense, Conv2D, MaxPooling2D, UpSampling2D, Activation, Dropout, Reshape, LeakyReLU
-from keras.models import Model
+from keras.models import Model, load_model
 import random
 import os
 import cv2
@@ -12,13 +12,17 @@ random.seed(777)
 
 _MODEL_FILENAME = 'models/model_yolike_roader.h5'
 
+# If true, model is not compiled from scratch> but loaded from the file.
+_LOAD_MODEL = True
+
+# WHen on pretrain, unlabeled data is used, and therefore mask is ignored.
+_PRETRAIN = True
+
 # dimensions of our images.
 img_width, img_height = 320, 180  # 160, 90
 
 train_data_dir = 'dataset/train/X'
-validation_data_dir = 'dataset/validation/X'
-nb_train_samples = 500
-nb_validation_samples = 20
+
 epochs = 5
 iterations = 5
 batch_size = 32
@@ -27,6 +31,16 @@ batch_size = 32
 def load_data(path=train_data_dir):
     X, Y = [], []
     for root_back, dirs_back, files_back in os.walk(path):
+        total_files = len(files_back)
+        print("Total %u files to load" % total_files)
+        total_memory = total_files * img_height * img_width * 2 * 4
+        total_mem_mib = int(total_memory / (1024*1024))
+        print("Predicted memory consumption %u bytes (%u MBytes)" % (total_memory, total_mem_mib))
+        X = np.zeros((total_files, img_height, img_width, 1), dtype='float32')
+        adjusted_height = 192  # 96  # !!! to fit with upsampling KERAS layers
+        Y = np.zeros((total_files, adjusted_height, img_width, 1), dtype='float32')
+        print("Arrays allocated.")
+        index = 0
         for _file in files_back:
             image = cv2.imread(os.path.join(path, _file))
             image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -36,26 +50,30 @@ def load_data(path=train_data_dir):
             _x = _x.astype('float32')
             _x = _x / 255
             _x = _x.reshape((img_height, img_width, 1))
-            X.append(_x)
+            # X.append(_x)
+            X[index] = _x
 
-            adjusted_height = 192  # 96
-            #  _y = cv2.resize(_y, (img_width, adjusted_height))  # !!! to fit with upsampling KERAS layers
-            _y = cv2.resize(_y, (img_width, adjusted_height))
-            _y = _y.astype('float32')
-            _y = _y / 255
-            _y = _y.reshape((adjusted_height, img_width, 1))
-            Y.append(_y)
-    X = np.array(X)
-    Y = np.array(Y)
+            if not _PRETRAIN:
+                _y = cv2.resize(_y, (img_width, adjusted_height))
+                _y = _y.astype('float32')
+                _y = _y / 255
+                _y = _y.reshape((adjusted_height, img_width, 1))
+            else:
+                _y = _x.reshape((adjusted_height, img_width, 1))
+            # Y.append(_y)
+            Y[index] = _y
+            index += 1
+    #X = np.array(X)
+    #Y = np.array(Y)
     return X, Y
 
-if __name__ == "__main__":
+def get_model():
     # Creating the Model
     # Here, the Model copies the one from tiny YOLO configuration (google "darknet YOLO")
     model_init = "he_uniform"
-    leak_alpha = 0.05
+    leak_alpha = 0.1
 
-    #input_img = Input(shape=(img_height, img_width, 3))  # adapt this if using `channels_first` image data format
+    # input_img = Input(shape=(img_height, img_width, 3))  # adapt this if using `channels_first` image data format
     input_img = Input(shape=(img_height, img_width, 1))  # adapt this if using `channels_first` image data format
 
     x = Conv2D(16, (3, 3), kernel_initializer=model_init, padding='same', name='Encoder_CONV2D_1')(input_img)
@@ -116,63 +134,25 @@ if __name__ == "__main__":
     autoencoder = Model(input_img, decoded)
     autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy',
                         metrics=['accuracy'])
-
     print("AE info:", autoencoder.summary())
+    return autoencoder
 
-    _TRAIN_ME = True
-    if _TRAIN_ME:
-        X, Y = load_data()
-        for i in range(0, iterations):
-            print("Iteration ", i, " of ", epochs)
-            autoencoder.fit(X, Y,
-                            epochs=epochs,
-                            batch_size=batch_size,
-                            shuffle=True,
-                            validation_split=0.1)
-            autoencoder.save_weights('weights/roader_yolike_trial_' + str(i) + '.h5')
-            autoencoder.save(_MODEL_FILENAME)
+if __name__ == "__main__":
+    if not _LOAD_MODEL:
+        autoencoder = get_model()
     else:
-        autoencoder.load_weights('weights/roader_yolike_trial_1.h5')
+        autoencoder = load_model(_MODEL_FILENAME)
 
+    X, Y = load_data()
+    for i in range(0, iterations):
+        print("Iteration ", i, " of ", epochs)
+        autoencoder.fit(X, Y,
+                        epochs=epochs,
+                        batch_size=batch_size,
+                        shuffle=True,
+                        validation_split=0.1)
+        autoencoder.save_weights('weights/roader_yolike_trial_' + str(i) + '.h5')
+        autoencoder.save(_MODEL_FILENAME)
 
-    # TEST:
-    path = 'dataset/test'
-    test_X = []
-    test_images = []
-    for root_back, dirs_back, files_back in os.walk(path):
-        for _file in files_back:
-            image = cv2.imread(os.path.join(path, _file))
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            test_images.append(image)
-
-            image = cv2.resize(image, (img_width, img_height))
-            image = image / 255
-            test_X.append(image)
-
-    test_X = np.array(test_X)
-    predicted = autoencoder.predict(test_X)
-    # denormalize
-    predicted = predicted * 255
-
-    for i in range(0, len(test_images)):
-        output = predicted[i].astype('uint8')
-        _input = test_images[i]
-        (height, width, _) = _input.shape
-        _input = cv2.cvtColor(_input, cv2.COLOR_RGB2BGR)
-        processed = cv2.resize(output, (width, height), interpolation=cv2.INTER_LINEAR)
-        cv2.imshow('Input', _input)
-        cv2.imshow('Output', processed)
-
-        alpha = 0.2
-        _, mask = cv2.threshold(processed, 200, 255, cv2.THRESH_BINARY)
-        mask = mask.astype(np.uint8)
-        combined = np.array(_input, dtype=np.uint8)
-        color_fill = _input
-        color_fill[:, :] = [255, 50, 255]
-        color_fill = cv2.bitwise_and(color_fill, color_fill, mask=mask)
-        cv2.addWeighted(combined, 1 - alpha, color_fill, alpha, 0, combined)
-        cv2.imshow('Prediction', combined)
-
-        cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    print("Training completed.")
 

@@ -120,10 +120,16 @@ def process_video(path):
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    process_video('video/road7.3gp')
-    #process_video('video/road8.3gp')
+    # process_video('video/road7.3gp')
+    # process_video('video/road8.3gp')
 
-    #process_video('video/road1.mp4')
-    #process_video('video/road2.mp4')
-    #process_video('video/road6.mp4')
-    #process_video('video/road_x.mp4')
+    # process_video('video/road1.mp4')
+    # process_video('video/road2.mp4')
+    # process_video('video/road3.mp4')
+    # process_video('video/road4.mp4')
+    # process_video('video/road5.mp4')
+    # process_video('video/road6.mp4')
+    # process_video('video/road8.mp4')
+    process_video('video/road9.mp4')
+    # process_video('video/road10.mp4')
+    # process_video('video/road_x.mp4')
