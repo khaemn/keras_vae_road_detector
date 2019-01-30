@@ -7,13 +7,23 @@ import os
 import cv2
 import numpy as np
 import datetime
+from math import sqrt
 
 
 random.seed(777)
 
-_MODEL_FILENAME = 'models/model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/collab_model_yolike_roader.h5'
 _TRAIN_DATA_DIR = 'dataset/train/X'
 _WEIGHTS_DIR = 'weights/'
+
+# Input and output images in dataset could be batched to improve IO speed.
+# This parameter should be even, and images should be stacked in n*2n pile,
+# where 2n is vertical size.
+_DATASET_BATCH_SIZE = 1
+_HORIZONTAL_BATCH_SIZE = 1 if _DATASET_BATCH_SIZE == 1 else int(sqrt(_DATASET_BATCH_SIZE / 2))
+_VERTICAL_BATCH_SIZE = 1 if _DATASET_BATCH_SIZE == 1 else int(_HORIZONTAL_BATCH_SIZE * 2)
+if _DATASET_BATCH_SIZE > 1:
+    assert _HORIZONTAL_BATCH_SIZE * 2 * _VERTICAL_BATCH_SIZE == _DATASET_BATCH_SIZE
 
 # If true, model is not compiled from scratch> but loaded from the file.
 _LOAD_MODEL = True
@@ -49,31 +59,34 @@ def load_data(path=_TRAIN_DATA_DIR):
             image = cv2.imread(os.path.join(path, _file))
             image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-            _x = image[:, :img_width]
-            _x = _x.astype('float32')
-            _x = _x / 255
-            _x = _x.reshape((img_height, img_width, 1))
-            # X.append(_x)
-            X[index] = _x
+            for x_index in range(0, _HORIZONTAL_BATCH_SIZE):
+                for y_index in range(0, _VERTICAL_BATCH_SIZE):
+                    y_offset = img_height * y_index
+                    x_offset = img_width * x_index
 
-            if _PRETRAIN:
-                _y = image[:, :img_width] # same as X here.
-            else:
-                _y = image[:, img_width:]
+                    _x = image[y_offset:(y_offset + img_height),
+                               x_offset:(x_offset + img_width)]
+                    if _PRETRAIN:
+                        _y = _x  # Y is the same as X in pretrain run.
+                    else:
+                        _y = image[y_offset:(y_offset + img_height),
+                                  (x_offset + img_width):(x_offset + 2 * img_width)]
 
-            _y = cv2.resize(_y, (img_width, adjusted_height))
-            _y = _y.astype('float32')
-            _y = _y / 255
-            _y = _y.reshape((adjusted_height, img_width, 1))
-            # Y.append(_y)
-            Y[index] = _y
+                    _x = _x.astype('float32')
+                    _x = _x / 255
+                    _x = _x.reshape((img_height, img_width, 1))
+                    X[index] = _x
+
+                    _y = cv2.resize(_y, (img_width, adjusted_height))
+                    _y = _y.astype('float32')
+                    _y = _y / 255
+                    _y = _y.reshape((adjusted_height, img_width, 1))
+                    Y[index] = _y
             index += 1
             log_iteration_count += 1
             if log_iteration_count >= logging_limit:
                 log_iteration_count = 0
                 print("Loaded %d of %d images %s" % (index, total_files, str(datetime.datetime.now())))
-    #X = np.array(X)
-    #Y = np.array(Y)
     return X, Y
 
 def get_model():

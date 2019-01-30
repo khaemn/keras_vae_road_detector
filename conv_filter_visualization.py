@@ -42,8 +42,6 @@ img_height = img_width # 256  # 128
 channel_count = 1  # 1 for grey, 3 for rgb
 
 
-# build the VGG16 network with ImageNet weights
-# model = vgg16.VGG16(weights='imagenet', include_top=False)
 _MODEL_FILENAME = 'models/collab_model_yolike_roader.h5'
 model = load_model(_MODEL_FILENAME)
 
@@ -60,6 +58,15 @@ layer_dict = dict([(layer.name, layer) for layer in model.layers[0:]])
 def plotFiltersFor(layer_name, filter_count=8):
     kept_filters = []
     total_filters = filter_count
+    gradient_steps = 50
+
+    # we start from a gray image with some random noise
+    if K.image_data_format() == 'channels_first':
+        origin_input_img_data = np.random.random((1, channel_count, img_width, img_height))
+    else:
+        origin_input_img_data = np.random.random((1, img_width, img_height, channel_count))
+    origin_input_img_data = (origin_input_img_data - 0.5) * 20 + 128
+
     for filter_index in range(total_filters):  # number of filters in the conv layer
         print('Processing filter %d of %d' % (filter_index, total_filters))
         start_time = time.time()
@@ -72,6 +79,7 @@ def plotFiltersFor(layer_name, filter_count=8):
         else:
             loss = K.mean(layer_output[:, :, :, filter_index])
 
+        print('Getting gradients...')
         # we compute the gradient of the input picture wrt this loss
         grads = K.gradients(loss, input_img)[0]
 
@@ -84,15 +92,12 @@ def plotFiltersFor(layer_name, filter_count=8):
         # step size for gradient ascent
         step = 1.
 
-        # we start from a gray image with some random noise
-        if K.image_data_format() == 'channels_first':
-            input_img_data = np.random.random((1, channel_count, img_width, img_height))
-        else:
-            input_img_data = np.random.random((1, img_width, img_height, channel_count))
-        input_img_data = (input_img_data - 0.5) * 20 + 128
+        print('Filling randoms...')
 
-        # we run gradient ascent for 20 steps
-        for i in range(20):
+        input_img_data = origin_input_img_data.copy()
+        print('Calculating gradients...')
+        # we run gradient ascent for N steps
+        for i in range(gradient_steps):
             loss_value, grads_value = iterate([input_img_data])
             input_img_data += grads_value * step
 
@@ -103,12 +108,13 @@ def plotFiltersFor(layer_name, filter_count=8):
 
         # decode the resulting input image
         if loss_value > 0:
+            print('Deprocessing image...')
             img = deprocess_image(input_img_data[0])
             kept_filters.append((img, loss_value))
         end_time = time.time()
         print('Filter %d processed in %ds' % (filter_index, end_time - start_time))
 
-    # we will stich the best 64 filters on a 8 x 8 grid.
+    # we will stitch the best 64 filters on a 8 x 8 grid.
     n = max(1, int(math.sqrt(abs(len(kept_filters) - 1))))
 
     # the filters that have the highest loss are assumed to be better-looking.
@@ -142,10 +148,10 @@ def plotFiltersFor(layer_name, filter_count=8):
 # the name of the layer we want to visualize
 # (see model definition at keras/applications/vgg16.py)
 layer_names = [  ['Encoder_CONV2D_1', 16]
-                #, ['Encoder_CONV2D_2', 32]
-                #, ['Encoder_CONV2D_3', 64]
-                #, ['Encoder_CONV2D_4', 128]
-                #, ['Encoder_CONV2D_5', 256]
+                , ['Encoder_CONV2D_2', 32]
+                , ['Encoder_CONV2D_3', 64]
+                , ['Encoder_CONV2D_4', 128]
+                , ['Encoder_CONV2D_5', 256]
                 , ['Encoder_CONV2D_6', 512]
                ]
 
