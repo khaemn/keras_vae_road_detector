@@ -10,11 +10,11 @@ import datetime
 '''
 
 _INPUT_DIR = 'dataset/train/X'
-_OUTPUT_DIR = ''
+_OUTPUT_DIR = 'dataset/train/XOUT'
 
-_V_COUNT = 8
-_H_COUNT = 4
-_BATCH_SIZE = _V_COUNT * _H_COUNT
+_H_COUNT = 20
+_V_COUNT = 40
+_DATA_BATCH_SIZE = _V_COUNT * _H_COUNT
 
 _IMG_WIDTH = 320 * 2  # 160  # 320
 _IMG_HEIGHT = 180  # 90  # 180
@@ -31,22 +31,35 @@ def compile_batches(input_dir=_INPUT_DIR, output_dir=_OUTPUT_DIR):
     total_files = len(image_files)
     iteration = 1
     print("%s %d files found for processing" % (str(datetime.datetime.now()), total_files))
-    (multiple, remainder) = divmod(total_files, _BATCH_SIZE)
+    (total_batches, remainder) = divmod(total_files, _DATA_BATCH_SIZE)
     print("%s %d files can be used in %d batches of size %d"
-          % (str(datetime.datetime.now()), multiple * _BATCH_SIZE, multiple, _BATCH_SIZE))
+          % (str(datetime.datetime.now()), total_batches * _DATA_BATCH_SIZE, total_batches, _DATA_BATCH_SIZE))
     if remainder > 0:
         print("%s Warning! Remainder is %d files, that will "
               "not be processed! Image count is not multiple of batch size."
               % (str(datetime.datetime.now()), remainder))
-    quit()
 
-    for filename in image_files:
-        print('Processing file', iteration, 'of', total_files)
+    debug_index_set = set()
+    for batch_index in range(0, total_batches):
+        print('Processing batch', iteration, 'of', total_batches)
         iteration += 1
-        img = cv2.imread(os.path.join(input_dir, filename))
+        batched_image = np.zeros((_IMG_HEIGHT * _V_COUNT, _IMG_WIDTH * _H_COUNT), dtype='uint8')
+        for x_index in range(0, _H_COUNT):
+            for y_index in range(0, _V_COUNT):
+                index_in_data_array = (batch_index * _DATA_BATCH_SIZE + (y_index * _H_COUNT) + x_index)
+                img = cv2.imread(os.path.join(input_dir, image_files[index_in_data_array]))
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                y_offset = _IMG_HEIGHT * y_index
+                x_offset = _IMG_WIDTH * x_index
+                batched_image[ y_offset:(y_offset + _IMG_HEIGHT),
+                              x_offset:(x_offset + _IMG_WIDTH)] = img
+                debug_index_set.add(index_in_data_array)
+        output = Image.fromarray(batched_image)
+        filename = "batch%d_%s" % (batch_index, image_files[batch_index])
+        output_path = os.path.join(_OUTPUT_DIR, filename)
+        output.save(output_path)
+    print("Processed %d (%d) images." % (total_files, len(debug_index_set)))
 
-
-    return
 
 if __name__ == "__main__":
     compile_batches()

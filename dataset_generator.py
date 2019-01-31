@@ -12,9 +12,9 @@ import cv2
 '''
 
 # _X_INPUT_DIR = 'heatmapping/heatmap_src'
-_X_INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/road6-maskeds/images'
+_X_INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/road9-maskeds/images-expanded'
 # _Y_INPUT_DIR = 'heatmapping/heatmap_out'
-_Y_INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/road6-maskeds/masks'
+_Y_INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/road9-maskeds/masks-expanded'
 _DATASET_DIR = 'dataset'
 _TRAIN_DIR = os.path.join(_DATASET_DIR, 'train')
 _X_TRAIN_DIR = os.path.join(_TRAIN_DIR, 'X')
@@ -22,7 +22,7 @@ _Y_TRAIN_DIR = os.path.join(_TRAIN_DIR, 'Y')
 
 _ATTACH_Y_TO_X = True
 _CONVERT_TO_GRAYSCALE = True
-_FLIP_HALVES = True
+_FLIP_HALVES = False
 
 # Usual resolutuion of HD cam is 1280*720, we use /4 resolution here to save performance
 _X_WIDTH = 320  # 160  # 320
