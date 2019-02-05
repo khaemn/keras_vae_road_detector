@@ -5,6 +5,12 @@ import cv2
 #_MODEL_FILENAME = 'models/model_vae_roader.h5'
 _MODEL_FILENAME = 'models/cl_model_yolike_roader.h5'
 
+_STACK_PREDICTIONS = False
+_STACK_DEPTH = 10
+_STACK_DECAY = 0.5
+
+_FRAME_DIVIDER = 1
+_TOTAL_FRAMES = 1500
 
 class RoadDetector:
     model = Sequential()
@@ -13,7 +19,7 @@ class RoadDetector:
     input_height = 180  # 90
     input_width = 320  # 160
     # N thresholds will produce N masks of N colors
-    mask_thresholds = [180, 200, 240]
+    mask_thresholds = [80, 200, 240]
     fill_colors = [[255, 50, 255], [255, 255, 50], [50, 255, 255]]
 
     def __init__(self, modelFile=_MODEL_FILENAME):
@@ -59,8 +65,9 @@ def process_video(paths):
     detector = RoadDetector()
 
     # increase speed by dividing frames
-    divider = 5
-    frames_to_process = 1000
+    divider = _FRAME_DIVIDER
+    frames_to_process = _TOTAL_FRAMES
+    framestack = list()
 
     for path in paths:
         cam = cv2.VideoCapture(path)
@@ -93,7 +100,26 @@ def process_video(paths):
                                     masking_threshold,
                                     masking_max,
                                     cv2.THRESH_BINARY)
+
             mask = mask.astype(np.uint8)
+
+            if _STACK_PREDICTIONS:
+                framestack.append(mask.copy())
+                stacked_masks = framestack[0].copy()
+                if len(framestack) > _STACK_DEPTH:
+                    framestack.pop(0)
+                for fr in range (0, len(framestack)):
+                    decay_rate = _STACK_DECAY ** (fr + 1)
+                    alpha = decay_rate
+                    frame = framestack[fr]
+                    # print("Debug weighting stacked masks to %d" % (fr))
+                    cv2.addWeighted(stacked_masks, 0.9, frame, alpha, 0, stacked_masks)
+                _, mask = cv2.threshold(stacked_masks,
+                                        100,
+                                        masking_max,
+                                        cv2.THRESH_BINARY)
+                mask = mask.astype(np.uint8)
+                cv2.imshow("Stacked", stacked_masks)
 
             alpha = 0.3
             combined = np.array(original, dtype=np.uint8)
@@ -130,23 +156,26 @@ if __name__ == '__main__':
     # process_video('video/road8.3gp')
 
     process_video([
-                    'video/road1.mp4',
-                    # 'video/noroad_1.mp4',
-                    'video/road2.mp4',
-                    'video/noroad_2.mp4',
-                    'video/road3.mp4',
-                    'video/noroad_3.mp4',
-                    'video/road4.mp4',
-                    'video/noroad_4.mp4',
-                    'video/road5.mp4',
-                    'video/noroad_5.mp4',
-                    'video/road6.mp4',
-                    'video/noroad_6.mp4',
-                    'video/road7.mp4',
-                    'video/noroad_7.mp4',
-                    'video/road8.mp4',
-                    'video/road9.mp4',
-                    'video/road10.mp4',
+                    #'video/road1.mp4',
+                    #'video/noroad_1.mp4',
+                    #'video/road2.mp4',
+                    #'video/noroad_2.mp4',
+                    #'video/road3.mp4',
+                    #'video/noroad_3.mp4',
+                    #'video/road4.mp4',
+                    #'video/noroad_4.mp4',
+                    #'video/road5.mp4',
+                    #'video/noroad_5.mp4',
+                    #'video/road6.mp4',
+                    #'video/noroad_6.mp4',
+                    #'video/road7.mp4',
+                    #'video/noroad_7.mp4',
+                    #'video/road8.mp4',
+                    #'video/road9.mp4',
+                    #'video/road10.mp4',
+                    'video/road11.mp4',
+                    'video/road12.mp4',
+                    'video/road13.mp4',
                     'video/diy-road7.3gp',
                     'video/diy-road8.3gp',
                     'video/diy-road11.3gp',

@@ -12,9 +12,10 @@ import cv2
 '''
 
 # _X_INPUT_DIR = 'heatmapping/heatmap_src'
-_X_INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/road9-maskeds/images-expanded'
+_DATA_DIR = '/home/rattus/Projects/PythonNN/datasets/road10-maskeds/'
+_X_INPUT_DIR = _DATA_DIR + 'images-expanded'
 # _Y_INPUT_DIR = 'heatmapping/heatmap_out'
-_Y_INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/road9-maskeds/masks-expanded'
+_Y_INPUT_DIR = _DATA_DIR + 'masks-expanded'
 _DATASET_DIR = 'dataset'
 _TRAIN_DIR = os.path.join(_DATASET_DIR, 'train')
 _X_TRAIN_DIR = os.path.join(_TRAIN_DIR, 'X')
@@ -77,6 +78,8 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT)):
 
         x_resized = cv2.resize(x_img, (gen_w, gen_h), interpolation=cv2.INTER_LINEAR)
         y_resized = cv2.resize(y_img, (gen_w, gen_h), interpolation=cv2.INTER_LINEAR)
+
+        _FLIP_HALVES = (iteration % 5 == 0)
 
         if _FLIP_HALVES:
             hor_middle = int(gen_w / 2)
