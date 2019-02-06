@@ -7,6 +7,7 @@ import os
 import cv2
 import numpy as np
 import datetime
+import gc
 from math import sqrt
 
 
@@ -15,7 +16,9 @@ random.seed(777)
 _EXISTING_MODEL_FILENAME = 'models/collab_model_yolike_roader.h5'
 _MODEL_FILENAME = 'models/model_yolike_roader.h5'
 _TRAIN_DATA_DIR = 'dataset/train/XOUT'
-_PRETRAIN_DATA_DIR = 'D:/__PROJECTS/PythonNN/keras_vae_road_detector/data/test'
+_PRETRAIN_DATA_DIR = 'D:/__PROJECTS/PythonNN/keras_vae_road_detector/data/test1'
+_PRETRAIN_DATA_DIR2 = 'D:/__PROJECTS/PythonNN/keras_vae_road_detector/data/test2'
+_PRETRAIN_DATA_DIR3 = 'D:/__PROJECTS/PythonNN/keras_vae_road_detector/data/test3'
 _WEIGHTS_DIR = 'weights/'
 
 # Input and output images in dataset could be batched to improve IO speed.
@@ -40,7 +43,7 @@ img_width, img_height = 320, 180  # 160, 90
 
 epochs = 1
 iterations = 5
-batch_size = 16
+batch_size = 200
 
 # Data loading should be reworked to keras Generators to improve perf.
 def load_data(path=_TRAIN_DATA_DIR):
@@ -252,7 +255,17 @@ def get_model():
 
 
 def runPretrain():
-    pretrain_data_dirs = [_PRETRAIN_DATA_DIR]
+    pretrain_data_dirs = [
+        '/content/drive/My Drive/Datasets/nexet/nexet_grey_1_1',
+        '/content/drive/My Drive/Datasets/nexet/nexet_grey_1_2',
+        '/content/drive/My Drive/Datasets/nexet/nexet_grey_1_3',
+        '/content/drive/My Drive/Datasets/nexet/nexet_grey_2_1',
+        '/content/drive/My Drive/Datasets/nexet/nexet_grey_2_2',
+        '/content/drive/My Drive/Datasets/nexet/nexet_grey_2_3',
+        '/content/drive/My Drive/Datasets/nexet/nexet_grey_3_1',
+        '/content/drive/My Drive/Datasets/nexet/nexet_grey_3_2',
+        '/content/drive/My Drive/Datasets/nexet/nexet_grey_3_3'
+    ]
 
     if not _LOAD_MODEL:
         vae_roader = get_model()
@@ -262,19 +275,24 @@ def runPretrain():
         print("Model loaded.")
     total_dirs = len(pretrain_data_dirs)
     current_run = 1
-    for dir in pretrain_data_dirs:
-        print("Pretrain run %d of %d Pretraining on batched images from %s"
-              % (current_run, total_dirs, dir))
-        X, Y = load_pretrain_data(dir)
-        for i in range(0, iterations):
-            print("\n\n\n%s\nIteration %d of %d" % (str(datetime.datetime.now()), i + 1, iterations))
-            vae_roader.fit(X, Y,
-                           epochs=epochs,
-                           batch_size=batch_size,
-                           shuffle=True,
-                           validation_split=0.1)
-            vae_roader.save_weights(_WEIGHTS_DIR + 'vae_roader_pretrain_' + str(i) + '.h5')
+    for itr in range(0, iterations):
+        print("\n\n\n%s\nIteration %d of %d" % (str(datetime.datetime.now()), itr + 1, iterations))
+        for dir in pretrain_data_dirs:
+            print("\nPretrain run %d of %d Pretraining on batched images from %s"
+                  % (current_run, total_dirs, dir))
+            current_run += 1
+            X, Y = load_pretrain_data(dir)
+            for i in range(0, epochs):
+                print("\n%s\nSub-epoch %d of %d" % (str(datetime.datetime.now()), i + 1, epochs))
+                vae_roader.fit(X, Y,
+                               epochs=epochs,
+                               batch_size=batch_size,
+                               shuffle=True,
+                               validation_split=0.01)
+            vae_roader.save_weights(_WEIGHTS_DIR + 'vae_roader_pretrain_' + str(itr) + '.h5')
             vae_roader.save(_MODEL_FILENAME)
+            del X, Y
+            gc.collect()
 
 
 def runTraining():
@@ -285,16 +303,16 @@ def runTraining():
         autoencoder = load_model(_EXISTING_MODEL_FILENAME)
         print("Model loaded.")
 
-        X, Y = load_data()
-        for i in range(0, iterations):
-            print("\n\n\n%s\nIteration %d of %d" % (str(datetime.datetime.now()), i+1, iterations))
-            autoencoder.fit(X, Y,
-                            epochs=epochs,
-                            batch_size=batch_size,
-                            shuffle=True,
-                            validation_split=0.1)
-            autoencoder.save_weights(_WEIGHTS_DIR + 'vae_roader_train_' + str(i) + '.h5')
-            autoencoder.save(_MODEL_FILENAME)
+    X, Y = load_data()
+    for i in range(0, iterations):
+        print("\n\n\n%s\nIteration %d of %d" % (str(datetime.datetime.now()), i+1, iterations))
+        autoencoder.fit(X, Y,
+                        epochs=epochs,
+                        batch_size=batch_size,
+                        shuffle=True,
+                        validation_split=0.1)
+        autoencoder.save_weights(_WEIGHTS_DIR + 'vae_roader_train_' + str(i) + '.h5')
+        autoencoder.save(_MODEL_FILENAME)
 
     print("\n\n\n%s\nTraining completed." % str(datetime.datetime.now()))
 

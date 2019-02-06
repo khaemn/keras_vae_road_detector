@@ -42,7 +42,7 @@ img_height = img_width # 256  # 128
 channel_count = 1  # 1 for grey, 3 for rgb
 
 
-_MODEL_FILENAME = 'models/collab_model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/cl_model_yolike_roader.h5'
 model = load_model(_MODEL_FILENAME)
 
 print('Model loaded.')
@@ -147,12 +147,18 @@ def plotFiltersFor(layer_name, filter_count=8):
 
 # the name of the layer we want to visualize
 # (see model definition at keras/applications/vgg16.py)
-layer_names = [  ['Encoder_CONV2D_1', 16]
-                , ['Encoder_CONV2D_2', 32]
-                , ['Encoder_CONV2D_3', 64]
-                , ['Encoder_CONV2D_4', 128]
-                , ['Encoder_CONV2D_5', 256]
-                , ['Encoder_CONV2D_6', 512]
+layer_names = [ ['Encoder_CONV2D_1', 8],
+                ['Encoder_CONV2D_2', 16],
+                ['Encoder_CONV2D_3', 32],
+                ['Encoder_CONV2D_4', 64],
+                ['Encoder_CONV2D_5', 128],
+                ['Encoder_CONV2D_6', 256],
+                ['Decoder_CONV2D_1', 4],
+                ['Decoder_CONV2D_2', 8],
+                ['Decoder_CONV2D_3', 16],
+                ['Decoder_CONV2D_4', 32],
+                ['Decoder_CONV2D_5', 64],
+                ['Decoder_CONV2D_6', 256],
                ]
 
 for lname in layer_names:

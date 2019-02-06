@@ -13,8 +13,8 @@ import datetime
     As far as this is pretrain images, no segmentation masks are processed.    
 '''
 
-_INPUT_DIR = 'D:/__PROJECTS/PythonNN/datasets/NEXET/nexet_2017_1'
-_OUTPUT_DIR = 'data/nexet_grey_2'
+_INPUT_DIR = 'D:/__PROJECTS/PythonNN/datasets/NEXET/nexet_2017_train_3/nexet_2017_3'
+_OUTPUT_DIR = 'data/nexet_grey_3'
 
 # Usual resolutuion of HD cam is 1280*720, we use /4 resolution here to save performance
 _X_WIDTH = 320  # 160  # 320
