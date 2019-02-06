@@ -13,8 +13,8 @@ import datetime
     As far as this is pretrain images, no segmentation masks are processed.    
 '''
 
-_INPUT_DIR = 'D:/__PROJECTS/PythonNN/datasets/NEXET/nexet_2017_2'
-_OUTPUT_DIR = 'data/grey'
+_INPUT_DIR = 'D:/__PROJECTS/PythonNN/datasets/NEXET/nexet_2017_1'
+_OUTPUT_DIR = 'data/nexet_grey_2'
 
 # Usual resolutuion of HD cam is 1280*720, we use /4 resolution here to save performance
 _X_WIDTH = 320  # 160  # 320
@@ -75,17 +75,6 @@ def generate_dataset(input_dir=_INPUT_DIR, output_dir=_OUTPUT_DIR, resolution=(_
         output_path = os.path.join(_OUTPUT_DIR, filename)
         output.save(output_path)
     print("Processed %d (%d) images." % (total_files, len(debug_index_set)))
-        
-    # for filename in x_images:
-    #     print('Processing file', iteration, 'of', total_files)
-    #     iteration += 1
-    # 
-    #     output = readAsTexturePiece(os.path.join(_INPUT_DIR, filename), resolution)
-    # 
-    #     output = Image.fromarray(output)
-    #     output_path = os.path.join(_OUTPUT_DIR, filename)
-    #     output.save(output_path)
-
 
 
 if __name__ == '__main__':
