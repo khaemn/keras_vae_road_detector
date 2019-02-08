@@ -274,9 +274,10 @@ def runPretrain():
         vae_roader = load_model(_EXISTING_MODEL_FILENAME)
         print("Model loaded.")
     total_dirs = len(pretrain_data_dirs)
-    current_run = 1
+
     for itr in range(0, iterations):
         print("\n\n\n%s\nIteration %d of %d" % (str(datetime.datetime.now()), itr + 1, iterations))
+        current_run = 1
         for dir in pretrain_data_dirs:
             print("\nPretrain run %d of %d Pretraining on batched images from %s"
                   % (current_run, total_dirs, dir))
