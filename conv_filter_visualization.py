@@ -58,7 +58,7 @@ layer_dict = dict([(layer.name, layer) for layer in model.layers[0:]])
 def plotFiltersFor(layer_name, filter_count=8):
     kept_filters = []
     total_filters = filter_count
-    gradient_steps = 50
+    gradient_steps = 100
 
     # we start from a gray image with some random noise
     if K.image_data_format() == 'channels_first':
@@ -153,6 +153,7 @@ layer_names = [ ['Encoder_CONV2D_1', 8],
                 ['Encoder_CONV2D_4', 64],
                 ['Encoder_CONV2D_5', 128],
                 ['Encoder_CONV2D_6', 256],
+
                 ['Decoder_CONV2D_1', 4],
                 ['Decoder_CONV2D_2', 8],
                 ['Decoder_CONV2D_3', 16],

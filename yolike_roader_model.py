@@ -13,7 +13,7 @@ from math import sqrt
 
 random.seed(777)
 
-_EXISTING_MODEL_FILENAME = 'models/collab_model_yolike_roader.h5'
+_EXISTING_MODEL_FILENAME = 'models/model_yolike_roader.h5'
 _MODEL_FILENAME = 'models/model_yolike_roader.h5'
 _TRAIN_DATA_DIR = 'dataset/train/XOUT'
 _PRETRAIN_DATA_DIR = 'D:/__PROJECTS/PythonNN/keras_vae_road_detector/data/test1'
@@ -32,18 +32,18 @@ _PRETRAIN_VERTICAL_BATCH_SIZE = 40
 
 
 # If true, model is not compiled from scratch> but loaded from the file.
-_LOAD_MODEL = False # True
+_LOAD_MODEL = True
 
 # When in pretrain run, unlabeled data is used, and therefore mask is ignored.
-_PRETRAIN = True
+_PRETRAIN = False
 
 # dimensions of our images.
 img_width, img_height = 320, 180  # 160, 90
 
 
-epochs = 1
+epochs = 3
 iterations = 5
-batch_size = 200
+batch_size = 64
 
 # Data loading should be reworked to keras Generators to improve perf.
 def load_data(path=_TRAIN_DATA_DIR):
@@ -58,7 +58,7 @@ def load_data(path=_TRAIN_DATA_DIR):
         total_mem_mib = int(total_memory / (1024*1024))
         print("Predicted memory consumption %u bytes (%u MBytes)" % (total_memory, total_mem_mib))
         X = np.zeros((array_size, img_height, img_width, 1), dtype='float32')
-        adjusted_height = 180  # 192  # 96  # !!! to fit with upsampling KERAS layers
+        adjusted_height = 192  # 192  # 96  # !!! to fit with upsampling KERAS layers
         Y = np.zeros((array_size, adjusted_height, img_width, 1), dtype='float32')
         print("Arrays allocated, X and Y lengths are %d" % array_size)
         batch_index = 0
