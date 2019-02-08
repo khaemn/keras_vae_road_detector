@@ -20,6 +20,7 @@ _PRETRAIN_DATA_DIR = 'D:/__PROJECTS/PythonNN/keras_vae_road_detector/data/test1'
 _PRETRAIN_DATA_DIR2 = 'D:/__PROJECTS/PythonNN/keras_vae_road_detector/data/test2'
 _PRETRAIN_DATA_DIR3 = 'D:/__PROJECTS/PythonNN/keras_vae_road_detector/data/test3'
 _WEIGHTS_DIR = 'weights/'
+_WEIGHTS_FILE = _WEIGHTS_DIR + 'exp_vae_roader_pretrain.h5'
 
 # Input and output images in dataset could be batched to improve IO speed.
 # This parameter should be even, and images should be stacked in n*2n pile,
@@ -43,7 +44,7 @@ img_width, img_height = 320, 180  # 160, 90
 
 epochs = 3
 iterations = 5
-batch_size = 64
+batch_size = 32
 
 # Data loading should be reworked to keras Generators to improve perf.
 def load_data(path=_TRAIN_DATA_DIR):
@@ -182,7 +183,7 @@ def get_model():
     # input_img = Input(shape=(img_height, img_width, 3))  # adapt this if using `channels_first` image data format
     input_img = Input(shape=(img_height, img_width, 1))  # adapt this if using `channels_first` image data format
 
-    x = Conv2D(8, (3, 3), kernel_initializer=model_init,  trainable=_PRETRAIN,
+    x = Conv2D(16, (3, 3), kernel_initializer=model_init,  trainable=_PRETRAIN,
                padding='same', name='Encoder_CONV2D_1')(input_img)
     x = BatchNormalization()(x)
     x = LeakyReLU(alpha=leak_alpha)(x)
@@ -194,13 +195,13 @@ def get_model():
     x = LeakyReLU(alpha=leak_alpha)(x)
     x = MaxPooling2D((2, 2), padding='same')(x)
 
-    x = Conv2D(32, (3, 3), kernel_initializer=model_init,  trainable=_PRETRAIN,
+    x = Conv2D(16, (3, 3), kernel_initializer=model_init,  trainable=_PRETRAIN,
                padding='same', name='Encoder_CONV2D_3')(x)
     x = BatchNormalization()(x)
     x = LeakyReLU(alpha=leak_alpha)(x)
     x = MaxPooling2D((2, 2), padding='same')(x)
 
-    x = Conv2D(64, (3, 3), kernel_initializer=model_init,  trainable=_PRETRAIN,
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init,  trainable=_PRETRAIN,
                padding='same', name='Encoder_CONV2D_4')(x)
     x = BatchNormalization()(x)
     x = LeakyReLU(alpha=leak_alpha)(x)
@@ -212,7 +213,7 @@ def get_model():
     x = LeakyReLU(alpha=leak_alpha)(x)
     x = MaxPooling2D((2, 2), padding='same')(x)
 
-    x = Conv2D(256, (3, 3), kernel_initializer=model_init,  trainable=_PRETRAIN,
+    x = Conv2D(768, (3, 3), kernel_initializer=model_init,  trainable=_PRETRAIN,
                padding='same', name='Encoder_CONV2D_6')(x)
     x = BatchNormalization()(x)
     x = LeakyReLU(alpha=leak_alpha)(x)
@@ -220,11 +221,11 @@ def get_model():
 
     # at this point the representation is (6, 10, 128)
 
-    x = Conv2D(256, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_6')(x)
+    x = Conv2D(768, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_6')(x)
     x = LeakyReLU(alpha=leak_alpha)(x)
     x = UpSampling2D((2, 2))(x)
 
-    x = Conv2D(64, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_5')(x)
+    x = Conv2D(128, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_5')(x)
     x = LeakyReLU(alpha=leak_alpha)(x)
     x = UpSampling2D((2, 2))(x)
 
@@ -236,11 +237,11 @@ def get_model():
     x = LeakyReLU(alpha=leak_alpha)(x)
     x = UpSampling2D((2, 2))(x)
 
-    x = Conv2D(8, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_2')(x)
+    x = Conv2D(16, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_2')(x)
     x = LeakyReLU(alpha=leak_alpha)(x)
     x = UpSampling2D((2, 2))(x)
 
-    x = Conv2D(4, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_1')(x)
+    x = Conv2D(16, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_1')(x)
     x = LeakyReLU(alpha=leak_alpha)(x)
     x = UpSampling2D((2, 2))(x)
 
@@ -292,28 +293,30 @@ def runPretrain():
                                validation_split=0.01)
             vae_roader.save_weights(_WEIGHTS_DIR + 'vae_roader_pretrain_' + str(itr) + '.h5')
             vae_roader.save(_MODEL_FILENAME)
+            print("Save model at %s" % _MODEL_FILENAME)
             del X, Y
             gc.collect()
 
 
 def runTraining():
     if not _LOAD_MODEL:
-        autoencoder = get_model()
+        vae_roader = get_model()
     else:
-        print("Loading model ...")
-        autoencoder = load_model(_EXISTING_MODEL_FILENAME)
+        print("Loading model with weights from %s" % _WEIGHTS_FILE)
+        vae_roader = get_model()
+        vae_roader.load_weights(_WEIGHTS_FILE)
         print("Model loaded.")
 
     X, Y = load_data()
     for i in range(0, iterations):
         print("\n\n\n%s\nIteration %d of %d" % (str(datetime.datetime.now()), i+1, iterations))
-        autoencoder.fit(X, Y,
+        vae_roader.fit(X, Y,
                         epochs=epochs,
                         batch_size=batch_size,
                         shuffle=True,
                         validation_split=0.1)
-        autoencoder.save_weights(_WEIGHTS_DIR + 'vae_roader_train_' + str(i) + '.h5')
-        autoencoder.save(_MODEL_FILENAME)
+        vae_roader.save_weights(_WEIGHTS_DIR + 'vae_roader_train_' + str(i) + '.h5')
+        vae_roader.save(_MODEL_FILENAME)
 
     print("\n\n\n%s\nTraining completed." % str(datetime.datetime.now()))
 

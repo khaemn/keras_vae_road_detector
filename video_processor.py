@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 
 #_MODEL_FILENAME = 'models/model_vae_roader.h5'
-_MODEL_FILENAME = 'models/model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/exp_model_yolike_roader.h5'
 
 _STACK_PREDICTIONS = False
 _STACK_DEPTH = 10

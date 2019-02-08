@@ -5,7 +5,7 @@ import os
 import cv2
 from video_processor import RoadDetector
 
-_MODEL_FILENAME = 'models/model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/exp_model_yolike_roader.h5'
 _INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/nexet_example/smalltest/'
 _OUT_DIR = '/home/rattus/Projects/PythonNN/datasets/nexet_example/gen_masks/'
 _SHOW = False
