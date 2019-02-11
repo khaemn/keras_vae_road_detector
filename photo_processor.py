@@ -5,9 +5,11 @@ import os
 import cv2
 from video_processor import RoadDetector
 
-_MODEL_FILENAME = 'models/model_yolike_roader.h5'
-_INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/nexet_example/smalltest/'
+_MODEL_FILENAME = 'models/vae_model_yolike_roader.h5'
+_INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/nexet_example/images/'
+# '/home/rattus/Projects/PythonNN/datasets/nexet_example/smalltest/'
 _OUT_DIR = '/home/rattus/Projects/PythonNN/datasets/nexet_example/gen_masks/'
+# '/home/rattus/Projects/PythonNN/datasets/nexet_example/gen_masks/'
 _SHOW = False
 
 def processPhotos(input_dir=_INPUT_DIR, out_dir=_OUT_DIR):
@@ -15,11 +17,10 @@ def processPhotos(input_dir=_INPUT_DIR, out_dir=_OUT_DIR):
     files = []
 
     for root_back, dirs_back, files_back in os.walk(input_dir):
-        total_files = len(files_back)
-        print("Total %u files to process" % total_files)
         for _file in files_back:
             files.append(_file)
 
+    total_files = len(files)
     iteration = 1
 
     for filename in files:

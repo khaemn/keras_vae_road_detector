@@ -12,7 +12,7 @@ import cv2
 '''
 
 # _X_INPUT_DIR = 'heatmapping/heatmap_src'
-_DATA_DIR = '/home/rattus/Projects/PythonNN/datasets/road10-maskeds/'
+_DATA_DIR = '/home/rattus/Projects/PythonNN/datasets/diy-road-photos/'
 _X_INPUT_DIR = _DATA_DIR + 'images-expanded'
 # _Y_INPUT_DIR = 'heatmapping/heatmap_out'
 _Y_INPUT_DIR = _DATA_DIR + 'masks-expanded'

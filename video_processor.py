@@ -3,14 +3,14 @@ import numpy as np
 import cv2
 
 #_MODEL_FILENAME = 'models/model_vae_roader.h5'
-_MODEL_FILENAME = 'models/model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/vae_model_yolike_roader.h5'
 
 _STACK_PREDICTIONS = False
 _STACK_DEPTH = 10
 _STACK_DECAY = 0.5
 
-_FRAME_DIVIDER = 1
-_TOTAL_FRAMES = 1500
+_FRAME_DIVIDER = 4
+_TOTAL_FRAMES = 800
 
 class RoadDetector:
     model = Sequential()
@@ -19,7 +19,7 @@ class RoadDetector:
     input_height = 180  # 90
     input_width = 320  # 160
     # N thresholds will produce N masks of N colors
-    mask_thresholds = [80, 200, 240]
+    mask_thresholds = [100, 200, 240]
     fill_colors = [[255, 50, 255], [255, 255, 50], [50, 255, 255]]
 
     def __init__(self, modelFile=_MODEL_FILENAME):
@@ -42,6 +42,21 @@ class RoadDetector:
         prediction = prediction.astype('uint8')
 
         return prediction
+
+    def getMaskFor(self, image):
+        (origin_h, origin_w) = image.shape
+        prediction = self.predict(image)
+
+        prediction = cv2.resize(prediction, (origin_w, origin_h), interpolation=cv2.INTER_LANCZOS4)
+        masking_threshold = self.mask_thresholds[0]
+        masking_max = self.max_RGB
+        _, mask = cv2.threshold(prediction,
+                                masking_threshold,
+                                masking_max,
+                                cv2.THRESH_BINARY)
+
+        mask = mask.astype(np.uint8)
+        return mask
 
 def simple_test():
     detector = RoadDetector()
