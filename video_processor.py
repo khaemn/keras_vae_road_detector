@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 
 #_MODEL_FILENAME = 'models/model_vae_roader.h5'
-_MODEL_FILENAME = 'models/vae_model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/vaed_model_yolike_roader.h5'
 
 _STACK_PREDICTIONS = False
 _STACK_DEPTH = 10
@@ -171,6 +171,7 @@ if __name__ == '__main__':
     # process_video('video/road8.3gp')
 
     process_video([
+                    'video/road15.mp4',
                     'video/road9.mp4',
                     'video/road10.mp4',
                     'video/road11.mp4',
@@ -197,12 +198,3 @@ if __name__ == '__main__':
                     'video/diy-road11.3gp',
                     'video/diy-road12.3gp',
     ])
-    # process_video('video/road2.mp4')
-    # process_video('video/road3.mp4')
-    # process_video('video/road4.mp4')
-    # process_video('video/road5.mp4')
-    # process_video('video/road6.mp4')
-    # process_video('video/road8.mp4')
-    # process_video('video/road9.mp4')
-    # process_video('video/road10.mp4')
-    # process_video('video/road_x.mp4')
