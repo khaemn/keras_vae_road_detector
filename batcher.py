@@ -10,10 +10,10 @@ import datetime
 '''
 
 _INPUT_DIR = 'dataset/train/X'
-_OUTPUT_DIR = 'dataset/train/XOUT'
+_OUTPUT_DIR = 'dataset/train/XOUT2'
 
-_H_COUNT = 20
-_V_COUNT = 21
+_H_COUNT = 10
+_V_COUNT = 27
 _DATA_BATCH_SIZE = _V_COUNT * _H_COUNT
 
 _IMG_WIDTH = 320 * 2  # 160  # 320

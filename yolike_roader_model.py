@@ -15,9 +15,9 @@ from math import sqrt
 
 random.seed(777)
 
-_EXISTING_MODEL_FILENAME = 'models/vir_model_yolike_roader.h5'
-_MODEL_FILENAME = 'models/vir_model_yolike_roader.h5'
-_TRAIN_DATA_DIR = 'dataset/train/XOUT'
+_EXISTING_MODEL_FILENAME = 'models/model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/model_yolike_roader.h5'
+_TRAIN_DATA_DIR = 'dataset/train/XOUT2'
 _PRETRAIN_DATA_DIR = 'D:/__PROJECTS/PythonNN/keras_vae_road_detector/data/test1'
 _PRETRAIN_DATA_DIR2 = 'D:/__PROJECTS/PythonNN/keras_vae_road_detector/data/test2'
 _PRETRAIN_DATA_DIR3 = 'D:/__PROJECTS/PythonNN/keras_vae_road_detector/data/test3'
@@ -27,15 +27,15 @@ _WEIGHTS_FILE = _WEIGHTS_DIR + 'exp_vae_roader_pretrain.h5'
 # Input and output images in dataset could be batched to improve IO speed.
 # This parameter should be even, and images should be stacked in n*2n pile,
 # where 2n is vertical size.
-_HORIZONTAL_BATCH_SIZE = 20
-_VERTICAL_BATCH_SIZE = 21
+_HORIZONTAL_BATCH_SIZE = 10
+_VERTICAL_BATCH_SIZE = 27
 
 _PRETRAIN_HORIZONTAL_BATCH_SIZE = 40
 _PRETRAIN_VERTICAL_BATCH_SIZE = 40
 
 
 # If true, model is not compiled from scratch> but loaded from the file.
-_LOAD_MODEL = False
+_LOAD_MODEL = True
 
 # When in pretrain run, unlabeled data is used, and therefore mask is ignored.
 _PRETRAIN = False
@@ -46,7 +46,7 @@ img_width, img_height = 320, 180  # 160, 90
 
 epochs = 3
 iterations = 5
-batch_size = 32
+batch_size = 16
 
 # Data loading should be reworked to keras Generators to improve perf.
 def load_data(path=_TRAIN_DATA_DIR):
