@@ -1,6 +1,8 @@
 from keras.models import Sequential, load_model
 import numpy as np
 import cv2
+import time
+import datetime
 
 #_MODEL_FILENAME = 'models/model_vae_roader.h5'
 _MODEL_FILENAME = 'models/vaed_model_yolike_roader.h5'
@@ -99,6 +101,9 @@ def process_video(paths):
             # original = cv2.flip(original, 0)
 
             dataForNN = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
+
+            start = datetime.datetime.now()  # time.process_time()
+
             prediction = detector.predict(dataForNN)
 
             rawmask = prediction.copy()
@@ -153,6 +158,11 @@ def process_video(paths):
             cv2.putText(combined, text, (int(wr_width / 3) + 2, 30 + 2),
                         cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 255), 1, cv2.LINE_AA)
 
+            # do some stuff
+            end = datetime.datetime.now()  # time.process_time()
+            elapsed = end - start
+            print("elapsed time %d" % int(elapsed.total_seconds() * 1000))
+
             cv2.imshow('Prediction', combined)
 
             out.write(combined)
@@ -162,6 +172,7 @@ def process_video(paths):
 
             if cv2.waitKey(1) == 27:
                 break  # esc to quit
+            cv2.waitKey(0)
     cam.release()
     out.release()
     cv2.destroyAllWindows()

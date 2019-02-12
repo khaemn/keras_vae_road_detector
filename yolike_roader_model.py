@@ -17,7 +17,7 @@ random.seed(777)
 
 _EXISTING_MODEL_FILENAME = 'models/model_yolike_roader.h5'
 _MODEL_FILENAME = 'models/model_yolike_roader.h5'
-_TRAIN_DATA_DIR = 'dataset/train/XOUT2'
+_TRAIN_DATA_DIR = '/home/rattus/Projects/PythonNN/datasets/3-TRAIN'
 _PRETRAIN_DATA_DIR = 'D:/__PROJECTS/PythonNN/keras_vae_road_detector/data/test1'
 _PRETRAIN_DATA_DIR2 = 'D:/__PROJECTS/PythonNN/keras_vae_road_detector/data/test2'
 _PRETRAIN_DATA_DIR3 = 'D:/__PROJECTS/PythonNN/keras_vae_road_detector/data/test3'
@@ -27,8 +27,8 @@ _WEIGHTS_FILE = _WEIGHTS_DIR + 'exp_vae_roader_pretrain.h5'
 # Input and output images in dataset could be batched to improve IO speed.
 # This parameter should be even, and images should be stacked in n*2n pile,
 # where 2n is vertical size.
-_HORIZONTAL_BATCH_SIZE = 10
-_VERTICAL_BATCH_SIZE = 27
+_HORIZONTAL_BATCH_SIZE = 15
+_VERTICAL_BATCH_SIZE = 40
 
 _PRETRAIN_HORIZONTAL_BATCH_SIZE = 40
 _PRETRAIN_VERTICAL_BATCH_SIZE = 40
@@ -46,7 +46,7 @@ img_width, img_height = 320, 180  # 160, 90
 
 epochs = 3
 iterations = 5
-batch_size = 16
+batch_size = 32
 
 # Data loading should be reworked to keras Generators to improve perf.
 def load_data(path=_TRAIN_DATA_DIR):
@@ -57,8 +57,8 @@ def load_data(path=_TRAIN_DATA_DIR):
         total_files = len(files_back)
         array_size = _DATA_BATCH_SIZE * total_files
         print("Total %u files to load" % total_files)
-        total_memory = array_size * img_height * img_width * 2 * 4
-        total_mem_mib = int(total_memory / (1024*1024))
+        total_memory = array_size * img_height * img_width * 12 # 12 is exp. coeff.
+        total_mem_mib = int(total_memory / (1024*1024))  #
         print("Predicted memory consumption %u bytes (%u MBytes)" % (total_memory, total_mem_mib))
         X = np.zeros((array_size, img_height, img_width, 1), dtype='float32')
         adjusted_height = 192  # 192  # 96  # !!! to fit with upsampling KERAS layers
@@ -81,9 +81,7 @@ def load_data(path=_TRAIN_DATA_DIR):
 
                     _x = image[y_offset:(y_offset + img_height),
                                x_offset:(x_offset + img_width)]
-                    #if _PRETRAIN:
-                    #    _y = _x  # Y is the same as X in pretrain run.
-                    #else:
+
                     _y = image[y_offset:(y_offset + img_height),
                                    (x_offset + img_width):(x_offset + 2 * img_width)]
 

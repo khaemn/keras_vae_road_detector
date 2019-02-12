@@ -2,6 +2,7 @@ import numpy as np
 from PIL import Image
 import os
 import cv2
+import datetime
 
 '''
     This script takes 2 folders with images and forms a combined image for each pair
@@ -11,43 +12,62 @@ import cv2
     Heatmapped images usually are about 1280*720 (full-hd camera) images, heatmapped by OCV_RND project.
 '''
 
-# _X_INPUT_DIR = 'heatmapping/heatmap_src'
 _DATA_DIR = '/home/rattus/Projects/PythonNN/datasets/diy-road-photos/'
 _X_INPUT_DIR = _DATA_DIR + 'images-expanded'
-# _Y_INPUT_DIR = 'heatmapping/heatmap_out'
 _Y_INPUT_DIR = _DATA_DIR + 'masks-expanded'
 _DATASET_DIR = 'dataset'
 _TRAIN_DIR = os.path.join(_DATASET_DIR, 'train')
-_X_TRAIN_DIR = os.path.join(_TRAIN_DIR, 'X')
-_Y_TRAIN_DIR = os.path.join(_TRAIN_DIR, 'Y')
+_OUT_DIR = os.path.join(_TRAIN_DIR, 'X')
 
-_ATTACH_Y_TO_X = True
-_CONVERT_TO_GRAYSCALE = True
 _FLIP_HALVES = False
 
-# Usual resolutuion of HD cam is 1280*720, we use /4 resolution here to save performance
+# Usual resolution of HD cam is 1280*720, we use /4 resolution here to save performance
 _X_WIDTH = 320  # 160  # 320
 _X_HEIGHT = 180  # 90  # 180
 
-# I think that road heatmap resolution of R/20 will be enough
-# _Y_WIDTH = 64
-# _Y_HEIGHT = 36
 _Y_WIDTH = _X_WIDTH
 _Y_HEIGHT = _X_HEIGHT
 
 
-def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT)):
+def generate_from_dirs(in_dirs, out_dir, batch_dims=(1,1)):
+    total_dirs = len(in_dirs)
+    dir_num = 1
+    start = datetime.datetime.now()
+    total_files = 0
+    for dir in in_dirs:
+        print("Processing dir %s (%d of %d) %s"
+              % (dir, dir_num, total_dirs, datetime.datetime.now()))
+        dir_num += 1
+        x_inp = os.path.join(dir, 'images')
+        y_inp = os.path.join(dir, 'masks')
+        total_files += generate_dataset(x_input=x_inp,
+                                        y_input=y_inp,
+                                        out_path=out_dir,
+                                        augmenting=True,
+                                        batch_dims=(1, 1))
+    end = datetime.datetime.now()
+    total_time = end - start
+    print("Total %d files processed" % total_files)
+    print("Elapsed time %d" % total_time)
+
+
+def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT),
+                     x_input=_X_INPUT_DIR,
+                     y_input=_Y_INPUT_DIR,
+                     out_path=_OUT_DIR,
+                     augmenting=False,
+                     batch_dims=(1, 1)):
     x_images = []
     y_images = []
 
     (gen_w, gen_h) = resolution
 
     # Scan both dirs
-    for root_back, dirs_back, files_back in os.walk(_X_INPUT_DIR):
+    for root_back, dirs_back, files_back in os.walk(x_input):
         for _file in files_back:
             x_images.append(_file)
 
-    for root_back, dirs_back, files_back in os.walk(_Y_INPUT_DIR):
+    for root_back, dirs_back, files_back in os.walk(y_input):
         for _file in files_back:
             y_images.append(_file)
 
@@ -55,66 +75,96 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT)):
 
     total_files = len(x_images)
     iteration = 1
+    (h_count, v_count) = batch_dims
+    data_batch_size = h_count * v_count
+    print("%s %d files found for processing" % (str(datetime.datetime.now()), total_files))
+    (total_batches, remainder) = divmod(total_files, data_batch_size)
+    print("%s %d files can be used in %d batches of size %d"
+          % (str(datetime.datetime.now()), total_batches * data_batch_size, total_batches, data_batch_size))
+    if remainder > 0:
+        print("%s Warning! Remainder is %d files, that will "
+              "not be processed! Image count is not multiple of batch size."
+              % (str(datetime.datetime.now()), remainder))
 
     for filename in x_images:
-        print('Processing file', iteration, 'of', total_files)
+        print('Processing file', iteration, 'of', total_files, '  ', filename)
         iteration += 1
-        x_img = cv2.imread(os.path.join(_X_INPUT_DIR, filename))
-        convertation_color_space = cv2.COLOR_BGR2GRAY if _CONVERT_TO_GRAYSCALE else cv2.COLOR_BGR2RGB
+        x_img = cv2.imread(os.path.join(x_input, filename))
+        convertation_color_space = cv2.COLOR_BGR2GRAY
         x_img = cv2.cvtColor(x_img, convertation_color_space)
         (origin_h, origin_w) = x_img.shape
 
-        y_img = cv2.imread(os.path.join(_Y_INPUT_DIR, filename))
+        y_img = cv2.imread(os.path.join(y_input, filename))
         y_img = cv2.cvtColor(y_img, convertation_color_space)
         y_img = cv2.resize(y_img, (origin_w, origin_h))
 
         assert x_img.shape == y_img.shape
 
-        depth = 1
-        if _CONVERT_TO_GRAYSCALE:
-            (height, width) = x_img.shape
-        else:
-            (height, width, depth) = x_img.shape
-
         x_resized = cv2.resize(x_img, (gen_w, gen_h), interpolation=cv2.INTER_LINEAR)
         y_resized = cv2.resize(y_img, (gen_w, gen_h), interpolation=cv2.INTER_LINEAR)
 
-        _FLIP_HALVES = (iteration % 5 == 0)
+        output = np.zeros((gen_h, gen_w * 2), dtype='uint8')
+        output[:, :gen_w] = x_resized
+        output[:, gen_w:] = y_resized
 
-        if _FLIP_HALVES:
+        f_output = Image.fromarray(output)
+        output_path = os.path.join(out_path, filename)
+        f_output.save(output_path)
+        print("    Regular output")
+
+        _SWAP_HALVES = augmenting
+        _FLIP_HORIZ = augmenting
+
+        if _SWAP_HALVES:
             hor_middle = int(gen_w / 2)
 
-            flipped_x = x_resized.copy()
-            flipped_x[:, :hor_middle] = x_resized[:, hor_middle:]
-            flipped_x[:, hor_middle:] = x_resized[:, :hor_middle]
-            x_resized = flipped_x
+            halved_x = x_resized.copy()
+            halved_x[:, :hor_middle] = x_resized[:, hor_middle:]
+            halved_x[:, hor_middle:] = x_resized[:, :hor_middle]
 
-            flipped_y = y_resized.copy()
-            flipped_y[:, :hor_middle] = y_resized[:, hor_middle:]
-            flipped_y[:, hor_middle:] = y_resized[:, :hor_middle]
-            y_resized = flipped_y
+            halved_y = y_resized.copy()
+            halved_y[:, :hor_middle] = y_resized[:, hor_middle:]
+            halved_y[:, hor_middle:] = y_resized[:, :hor_middle]
 
-        if _ATTACH_Y_TO_X:
-            # Concatenating input with expected output
-            if _CONVERT_TO_GRAYSCALE:
-                output = np.zeros((gen_h, gen_w * 2), dtype='uint8')
-                output[:, :_X_WIDTH] = x_resized
-                output[:, _X_WIDTH:] = y_resized
-            else:
-                output = np.zeros((gen_h, gen_w*2, depth), dtype='uint8')
-                output[:, :_X_WIDTH] = x_resized
-                output[:, _X_WIDTH:] = y_resized
+            halved = np.zeros((gen_h, gen_w * 2), dtype='uint8')
+            halved[:, :gen_w] = halved_x
+            halved[:, gen_w:] = halved_y
+            halved_output = Image.fromarray(halved)
+            output_path = os.path.join(out_path, 'halved-' + filename)
+            halved_output.save(output_path)
+            print("    Horizontal half-flipping output")
 
-            output = Image.fromarray(output)
-            output_path = os.path.join(_X_TRAIN_DIR, filename)
-            if _FLIP_HALVES:
-                output_path = os.path.join(_X_TRAIN_DIR, 'halved-' + filename)
-            output.save(output_path)
-        else:
-            x_out, y_out = Image.fromarray(x_resized), Image.fromarray(y_resized)
-            x_out.save(os.path.join(_X_TRAIN_DIR, filename))
-            y_out.save(os.path.join(_Y_TRAIN_DIR, filename))
+        if _FLIP_HORIZ:
+            hflip_x = cv2.flip(x_resized, 1)
+            hflip_y = cv2.flip(y_resized, 1)
+            horflipped = np.zeros((gen_h, gen_w * 2), dtype='uint8')
+            horflipped[:, :gen_w] = hflip_x
+            horflipped[:, gen_w:] = hflip_y
+            f_horflipped = Image.fromarray(horflipped)
+            output_path = os.path.join(out_path, 'hor-flip-' + filename)
+            f_horflipped.save(output_path)
+            print("    Horizontal flipping output")
+    return total_files
 
 
 if __name__ == '__main__':
-    generate_dataset()
+    # generate_dataset()
+    generate_from_dirs(in_dirs=[
+                                #'/home/rattus/Projects/PythonNN/datasets/diy-road-photos',
+                                #'/home/rattus/Projects/PythonNN/datasets/downloaded-assorted',
+                                #'/home/rattus/Projects/PythonNN/datasets/nexet_example',
+                                #'/home/rattus/Projects/PythonNN/datasets/noroad-maskeds',
+                                #'/home/rattus/Projects/PythonNN/datasets/road2and5-maskeds',
+                                #'/home/rattus/Projects/PythonNN/datasets/road3-maskeds',
+                                #'/home/rattus/Projects/PythonNN/datasets/road4-maskeds',
+                                #'/home/rattus/Projects/PythonNN/datasets/road6-maskeds',
+                                #'/home/rattus/Projects/PythonNN/datasets/road6-reduced',
+                                #'/home/rattus/Projects/PythonNN/datasets/road8-maskeds',
+                                #'/home/rattus/Projects/PythonNN/datasets/road9-maskeds',
+                                #'/home/rattus/Projects/PythonNN/datasets/road10-maskeds',
+                                #'/home/rattus/Projects/PythonNN/datasets/road71-maskeds',
+                                '/home/rattus/Projects/PythonNN/datasets/road-4-12-15-gen',
+                               ],
+                       out_dir='/home/rattus/Projects/PythonNN/datasets/1-OUT')
+
+

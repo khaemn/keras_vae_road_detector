@@ -9,11 +9,11 @@ import datetime
     with given vertcial and horizontal count (8*4 by default)
 '''
 
-_INPUT_DIR = 'dataset/train/X'
-_OUTPUT_DIR = 'dataset/train/XOUT2'
+_INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/1-OUT'
+_OUTPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/2-TEXTURED'
 
-_H_COUNT = 10
-_V_COUNT = 27
+_H_COUNT = 15
+_V_COUNT = 40
 _DATA_BATCH_SIZE = _V_COUNT * _H_COUNT
 
 _IMG_WIDTH = 320 * 2  # 160  # 320
@@ -55,7 +55,7 @@ def compile_batches(input_dir=_INPUT_DIR, output_dir=_OUTPUT_DIR):
                               x_offset:(x_offset + _IMG_WIDTH)] = img
                 debug_index_set.add(index_in_data_array)
         output = Image.fromarray(batched_image)
-        filename = "batch%d_%s" % (batch_index, image_files[batch_index])
+        filename = "batched%dx%d_%d_%s" % (_H_COUNT, _V_COUNT, batch_index, image_files[batch_index])
         output_path = os.path.join(_OUTPUT_DIR, filename)
         output.save(output_path)
     print("Processed %d (%d) images." % (total_files, len(debug_index_set)))
