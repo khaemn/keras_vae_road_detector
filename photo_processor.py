@@ -5,11 +5,9 @@ import os
 import cv2
 from video_processor import RoadDetector
 
-_MODEL_FILENAME = 'models/cl_model_yolike_roader.h5'
-_INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/nexet_example/images/'
-# '/home/rattus/Projects/PythonNN/datasets/nexet_example/smalltest/'
-_OUT_DIR = '/home/rattus/Projects/PythonNN/datasets/nexet_example/gen_masks/'
-# '/home/rattus/Projects/PythonNN/datasets/nexet_example/gen_masks/'
+_MODEL_FILENAME = 'models/model_yolike_roader.h5'
+_INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/nexet-1/images/'
+_OUT_DIR = '/home/rattus/Projects/PythonNN/datasets/nexet-1/gen_masks/'
 _SHOW = False
 
 def processPhotos(input_dir=_INPUT_DIR, out_dir=_OUT_DIR):
@@ -27,7 +25,7 @@ def processPhotos(input_dir=_INPUT_DIR, out_dir=_OUT_DIR):
         print('Processing file', iteration, 'of', total_files)
         iteration += 1
 
-        x_img = cv2.imread(os.path.join(_INPUT_DIR, filename))
+        x_img = cv2.imread(os.path.join(input_dir, filename))
         if _SHOW:
             cv2.imshow("Original", x_img)
         x_img = cv2.cvtColor(x_img, cv2.COLOR_BGR2GRAY)
@@ -38,7 +36,7 @@ def processPhotos(input_dir=_INPUT_DIR, out_dir=_OUT_DIR):
             cv2.imshow("Prediction", nn_output)
 
         nn_output = cv2.resize(nn_output, (origin_w, origin_h), interpolation=cv2.INTER_LANCZOS4)
-        masking_threshold = 100
+        masking_threshold = 180
         masking_max = detector.max_RGB
         _, mask = cv2.threshold(nn_output,
                                 masking_threshold,
@@ -57,4 +55,25 @@ def processPhotos(input_dir=_INPUT_DIR, out_dir=_OUT_DIR):
 
 
 if __name__ == '__main__':
-    processPhotos(_INPUT_DIR, _OUT_DIR)
+    dirs = [
+            '/home/rattus/Projects/PythonNN/datasets/diy-road-photos',
+            '/home/rattus/Projects/PythonNN/datasets/downloaded-assorted',
+            # '/home/rattus/Projects/PythonNN/datasets/nexet_example',
+            # '/home/rattus/Projects/PythonNN/datasets/noroad-maskeds',
+            # '/home/rattus/Projects/PythonNN/datasets/road2and5-maskeds',
+            # '/home/rattus/Projects/PythonNN/datasets/road3-maskeds',
+            # '/home/rattus/Projects/PythonNN/datasets/road4-maskeds',
+            # '/home/rattus/Projects/PythonNN/datasets/road6-maskeds',
+            # '/home/rattus/Projects/PythonNN/datasets/road6-reduced',
+            # '/home/rattus/Projects/PythonNN/datasets/road8-maskeds',
+            # '/home/rattus/Projects/PythonNN/datasets/road9-maskeds',
+            # '/home/rattus/Projects/PythonNN/datasets/road10-maskeds',
+            # '/home/rattus/Projects/PythonNN/datasets/road71-maskeds',
+            # '/home/rattus/Projects/PythonNN/datasets/road-4-12-15-gen'
+           ]
+    out_dir = '/home/rattus/Projects/PythonNN/datasets/4-GENERATED_MASKS'
+    for d in dirs:
+        path = os.path.join(d, 'images')
+        out_path = os.path.join(d, 'gen-masks')
+        print("Processing directory %s" % path)
+        processPhotos(path, out_path)

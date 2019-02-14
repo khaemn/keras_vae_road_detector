@@ -4,8 +4,7 @@ import cv2
 import time
 import datetime
 
-#_MODEL_FILENAME = 'models/model_vae_roader.h5'
-_MODEL_FILENAME = 'models/vaed_model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/model_yolike_roader.h5'
 
 _STACK_PREDICTIONS = False
 _STACK_DEPTH = 10
@@ -85,6 +84,9 @@ def process_video(paths):
     divider = _FRAME_DIVIDER
     frames_to_process = _TOTAL_FRAMES
     framestack = list()
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    masking_threshold = detector.mask_thresholds[0]
+    masking_max = RoadDetector.max_RGB
 
     for path in paths:
         cam = cv2.VideoCapture(path)
@@ -102,44 +104,33 @@ def process_video(paths):
 
             dataForNN = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
 
-            start = datetime.datetime.now()  # time.process_time()
+            # start = datetime.datetime.now()  # time.process_time()
 
             prediction = detector.predict(dataForNN)
 
             rawmask = prediction.copy()
-            #cv2.imshow('Rawmask', rawmask)
             rawmask_size = 0.25
             rawmask = cv2.resize(rawmask, (int(wr_width * rawmask_size), int(wr_height * rawmask_size)))
             rawmask = cv2.cvtColor(rawmask, cv2.COLOR_GRAY2BGR)
 
-            # prediction = cv2.cvtColor(prediction, cv2.COLOR_RGB2GRAY)
-            processed = cv2.resize(prediction, (wr_width, wr_height), interpolation=cv2.INTER_LANCZOS4)
-            masking_threshold = detector.mask_thresholds[0]
-            masking_max = detector.max_RGB
+            _, min_mask = cv2.threshold(prediction,
+                                    masking_threshold,
+                                    masking_max,
+                                    cv2.THRESH_BINARY)
+            # Preprocess to reduce noise
+            min_mask = cv2.erode(cv2.dilate(min_mask, kernel, iterations=2), kernel)
+            min_mask = cv2.dilate(cv2.erode(min_mask, kernel, iterations=2), kernel)
+
+            vis_min_mask = cv2.resize(min_mask, (int(wr_width * rawmask_size), int(wr_height * rawmask_size)))
+            vis_min_mask = cv2.cvtColor(vis_min_mask, cv2.COLOR_GRAY2BGR)
+
+            processed = cv2.resize(min_mask, (wr_width, wr_height), interpolation=cv2.INTER_LANCZOS4)
             _, mask = cv2.threshold(processed,
                                     masking_threshold,
                                     masking_max,
                                     cv2.THRESH_BINARY)
 
             mask = mask.astype(np.uint8)
-
-            if _STACK_PREDICTIONS:
-                framestack.append(mask.copy())
-                stacked_masks = framestack[0].copy()
-                if len(framestack) > _STACK_DEPTH:
-                    framestack.pop(0)
-                for fr in range (0, len(framestack)):
-                    decay_rate = _STACK_DECAY ** (fr + 1)
-                    alpha = decay_rate
-                    frame = framestack[fr]
-                    # print("Debug weighting stacked masks to %d" % (fr))
-                    cv2.addWeighted(stacked_masks, 0.9, frame, alpha, 0, stacked_masks)
-                _, mask = cv2.threshold(stacked_masks,
-                                        100,
-                                        masking_max,
-                                        cv2.THRESH_BINARY)
-                mask = mask.astype(np.uint8)
-                cv2.imshow("Stacked", stacked_masks)
 
             alpha = 0.3
             combined = np.array(original, dtype=np.uint8)
@@ -150,18 +141,20 @@ def process_video(paths):
 
             # overlaying a raw mask image to top left corner
             combined[:rawmask.shape[0], :rawmask.shape[1]] = rawmask
+            combined[:vis_min_mask.shape[0],
+                     rawmask.shape[1]:rawmask.shape[1] + vis_min_mask.shape[1]] = vis_min_mask
 
             # Printing the threshold value
             text = "Threshold %02d of %02d" % (masking_threshold, masking_max)
-            cv2.putText(combined, text, (int(wr_width / 3), 30),
+            cv2.putText(combined, text, (int(wr_width / 3), rawmask.shape[0] + 30),
                         cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 0, 0), 1, cv2.LINE_AA)
-            cv2.putText(combined, text, (int(wr_width / 3) + 2, 30 + 2),
+            cv2.putText(combined, text, (int(wr_width / 3) + 2, rawmask.shape[0] + 30 + 2),
                         cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 255), 1, cv2.LINE_AA)
 
             # do some stuff
-            end = datetime.datetime.now()  # time.process_time()
-            elapsed = end - start
-            print("elapsed time %d" % int(elapsed.total_seconds() * 1000))
+            # end = datetime.datetime.now()  # time.process_time()
+            # elapsed = end - start
+            # print("elapsed time %d" % int(elapsed.total_seconds() * 1000))
 
             cv2.imshow('Prediction', combined)
 
@@ -177,9 +170,6 @@ def process_video(paths):
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    # process_video('video/road7.3gp')
-    # process_video('video/road8.3gp')
-
     process_video([
                     'video/road15.mp4',
                     'video/road9.mp4',
