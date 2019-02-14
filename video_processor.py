@@ -172,7 +172,6 @@ def process_video(paths):
 
             if cv2.waitKey(1) == 27:
                 break  # esc to quit
-            cv2.waitKey(0)
     cam.release()
     out.release()
     cv2.destroyAllWindows()
