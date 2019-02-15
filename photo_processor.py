@@ -20,9 +20,10 @@ def processPhotos(input_dir=_INPUT_DIR, out_dir=_OUT_DIR):
 
     total_files = len(files)
     iteration = 1
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
 
     for filename in files:
-        print('Processing file', iteration, 'of', total_files)
+        print('Processing file', iteration, 'of', total_files, filename)
         iteration += 1
 
         x_img = cv2.imread(os.path.join(input_dir, filename))
@@ -43,6 +44,9 @@ def processPhotos(input_dir=_INPUT_DIR, out_dir=_OUT_DIR):
                                 masking_max,
                                 cv2.THRESH_BINARY)
 
+        # Preprocess to reduce noise
+        mask = cv2.dilate(cv2.erode(mask, kernel, iterations=2), kernel, iterations=2)
+        mask = cv2.erode(cv2.dilate(mask, kernel, iterations=2), kernel, iterations=2)
         mask = mask.astype(np.uint8)
 
         out_img = Image.fromarray(mask)
@@ -56,13 +60,13 @@ def processPhotos(input_dir=_INPUT_DIR, out_dir=_OUT_DIR):
 
 if __name__ == '__main__':
     dirs = [
-            '/home/rattus/Projects/PythonNN/datasets/diy-road-photos',
-            '/home/rattus/Projects/PythonNN/datasets/downloaded-assorted',
+            # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part',
+            # '/home/rattus/Projects/PythonNN/datasets/downloaded-assorted',
             # '/home/rattus/Projects/PythonNN/datasets/nexet_example',
             # '/home/rattus/Projects/PythonNN/datasets/noroad-maskeds',
             # '/home/rattus/Projects/PythonNN/datasets/road2and5-maskeds',
             # '/home/rattus/Projects/PythonNN/datasets/road3-maskeds',
-            # '/home/rattus/Projects/PythonNN/datasets/road4-maskeds',
+            '/home/rattus/Projects/PythonNN/datasets/road4-maskeds',
             # '/home/rattus/Projects/PythonNN/datasets/road6-maskeds',
             # '/home/rattus/Projects/PythonNN/datasets/road6-reduced',
             # '/home/rattus/Projects/PythonNN/datasets/road8-maskeds',
@@ -71,7 +75,7 @@ if __name__ == '__main__':
             # '/home/rattus/Projects/PythonNN/datasets/road71-maskeds',
             # '/home/rattus/Projects/PythonNN/datasets/road-4-12-15-gen'
            ]
-    out_dir = '/home/rattus/Projects/PythonNN/datasets/4-GENERATED_MASKS'
+    out_dir = '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part'
     for d in dirs:
         path = os.path.join(d, 'images')
         out_path = os.path.join(d, 'gen-masks')

@@ -48,7 +48,7 @@ def generate_from_dirs(in_dirs, out_dir, batch_dims=(1,1)):
     end = datetime.datetime.now()
     total_time = end - start
     print("Total %d files processed" % total_files)
-    print("Elapsed time %d" % total_time)
+    print("Elapsed time %s" % total_time)
 
 
 def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT),
@@ -132,7 +132,7 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT),
             halved_output = Image.fromarray(halved)
             output_path = os.path.join(out_path, 'halved-' + filename)
             halved_output.save(output_path)
-            print("    Horizontal half-flipping output")
+            print("    Horizontal half-swapping output")
 
         if _FLIP_HORIZ:
             hflip_x = cv2.flip(x_resized, 1)
@@ -150,20 +150,24 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT),
 if __name__ == '__main__':
     # generate_dataset()
     generate_from_dirs(in_dirs=[
-                                #'/home/rattus/Projects/PythonNN/datasets/diy-road-photos',
-                                #'/home/rattus/Projects/PythonNN/datasets/downloaded-assorted',
-                                #'/home/rattus/Projects/PythonNN/datasets/nexet_example',
-                                #'/home/rattus/Projects/PythonNN/datasets/noroad-maskeds',
-                                #'/home/rattus/Projects/PythonNN/datasets/road2and5-maskeds',
-                                #'/home/rattus/Projects/PythonNN/datasets/road3-maskeds',
-                                #'/home/rattus/Projects/PythonNN/datasets/road4-maskeds',
-                                #'/home/rattus/Projects/PythonNN/datasets/road6-maskeds',
-                                #'/home/rattus/Projects/PythonNN/datasets/road6-reduced',
-                                #'/home/rattus/Projects/PythonNN/datasets/road8-maskeds',
-                                #'/home/rattus/Projects/PythonNN/datasets/road9-maskeds',
-                                #'/home/rattus/Projects/PythonNN/datasets/road10-maskeds',
-                                #'/home/rattus/Projects/PythonNN/datasets/road71-maskeds',
-                                '/home/rattus/Projects/PythonNN/datasets/road-4-12-15-gen',
+                                # '/home/rattus/Projects/PythonNN/datasets/diy-road-photos',
+                                # '/home/rattus/Projects/PythonNN/datasets/downloaded-assorted',
+                                # '/home/rattus/Projects/PythonNN/datasets/nexet_example',
+                                # '/home/rattus/Projects/PythonNN/datasets/noroad-maskeds',
+                                # '/home/rattus/Projects/PythonNN/datasets/road2and5-maskeds',
+                                # '/home/rattus/Projects/PythonNN/datasets/road3-maskeds',
+                                # '/home/rattus/Projects/PythonNN/datasets/road4-maskeds',
+                                # '/home/rattus/Projects/PythonNN/datasets/road6-maskeds',
+                                # '/home/rattus/Projects/PythonNN/datasets/road6-reduced',
+                                # '/home/rattus/Projects/PythonNN/datasets/road8-maskeds',
+                                # '/home/rattus/Projects/PythonNN/datasets/road9-maskeds',
+                                # '/home/rattus/Projects/PythonNN/datasets/road10-maskeds',
+                                # '/home/rattus/Projects/PythonNN/datasets/road71-maskeds',
+                                # '/home/rattus/Projects/PythonNN/datasets/road-4-12-15-gen',
+                                # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_1',
+                                '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_2',
+                                '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_3',
+                                '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_4',
                                ],
                        out_dir='/home/rattus/Projects/PythonNN/datasets/1-OUT')
 

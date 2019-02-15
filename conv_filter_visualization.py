@@ -42,7 +42,7 @@ img_height = img_width # 256  # 128
 channel_count = 1  # 1 for grey, 3 for rgb
 
 
-_MODEL_FILENAME = 'models/cl_model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/model_yolike_roader.h5'
 model = load_model(_MODEL_FILENAME)
 
 print('Model loaded.')
