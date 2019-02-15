@@ -10,8 +10,8 @@ _STACK_PREDICTIONS = False
 _STACK_DEPTH = 10
 _STACK_DECAY = 0.5
 
-_FRAME_DIVIDER = 4
-_TOTAL_FRAMES = 800
+_FRAME_DIVIDER = 5
+_TOTAL_FRAMES = 5000
 
 class RoadDetector:
     model = Sequential()
@@ -20,7 +20,7 @@ class RoadDetector:
     input_height = 180  # 90
     input_width = 320  # 160
     # N thresholds will produce N masks of N colors
-    mask_thresholds = [100, 200, 240]
+    mask_thresholds = [60, 200, 240]
     fill_colors = [[255, 50, 255], [255, 255, 50], [50, 255, 255]]
 
     def __init__(self, modelFile=_MODEL_FILENAME):
@@ -84,7 +84,8 @@ def process_video(paths):
     divider = _FRAME_DIVIDER
     frames_to_process = _TOTAL_FRAMES
     framestack = list()
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    big_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+    small_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
     masking_threshold = detector.mask_thresholds[0]
     masking_max = RoadDetector.max_RGB
 
@@ -118,8 +119,8 @@ def process_video(paths):
                                     masking_max,
                                     cv2.THRESH_BINARY)
             # Preprocess to reduce noise
-            min_mask = cv2.erode(cv2.dilate(min_mask, kernel, iterations=2), kernel)
-            min_mask = cv2.dilate(cv2.erode(min_mask, kernel, iterations=2), kernel)
+            min_mask = cv2.dilate(cv2.erode(min_mask, big_kernel, iterations=2), small_kernel, iterations=2)
+            # min_mask = cv2.erode(cv2.dilate(min_mask, kernel, iterations=2), kernel, iterations=2)
 
             vis_min_mask = cv2.resize(min_mask, (int(wr_width * rawmask_size), int(wr_height * rawmask_size)))
             vis_min_mask = cv2.cvtColor(vis_min_mask, cv2.COLOR_GRAY2BGR)
@@ -129,7 +130,7 @@ def process_video(paths):
                                     masking_threshold,
                                     masking_max,
                                     cv2.THRESH_BINARY)
-
+            mask = cv2.dilate(cv2.erode(mask, small_kernel, iterations=2), big_kernel, iterations=2)
             mask = mask.astype(np.uint8)
 
             alpha = 0.3
@@ -171,30 +172,33 @@ def process_video(paths):
 
 if __name__ == '__main__':
     process_video([
-                    'video/road15.mp4',
-                    'video/road9.mp4',
-                    'video/road10.mp4',
-                    'video/road11.mp4',
-                    'video/road12.mp4',
-                    'video/road13.mp4',
-                    'video/road14.mp4',
-                    'video/road1.mp4',
-                    'video/noroad_1.mp4',
-                    'video/road2.mp4',
-                    'video/noroad_2.mp4',
-                    'video/road3.mp4',
-                    'video/noroad_3.mp4',
-                    'video/road4.mp4',
-                    'video/noroad_4.mp4',
-                    'video/road5.mp4',
-                    'video/noroad_5.mp4',
-                    'video/road6.mp4',
-                    'video/noroad_6.mp4',
-                    'video/road7.mp4',
-                    'video/noroad_7.mp4',
-                    'video/road8.mp4',
-                    'video/diy-road7.3gp',
-                    'video/diy-road8.3gp',
-                    'video/diy-road11.3gp',
-                    'video/diy-road12.3gp',
+                    # 'video/road15.mp4',
+                    # 'video/road9.mp4',
+                    # 'video/road10.mp4',
+                    # 'video/road11.mp4',
+                    # 'video/road12.mp4',
+                    # 'video/road13.mp4',
+                    # 'video/road14.mp4',
+                    # 'video/road1.mp4',
+                    # 'video/noroad_1.mp4',
+                    # 'video/road2.mp4',
+                    # 'video/noroad_2.mp4',
+                    # 'video/road3.mp4',
+                    # 'video/noroad_3.mp4',
+                    # 'video/road4.mp4',
+                    # 'video/noroad_4.mp4',
+                    # 'video/road5.mp4',
+                    # 'video/noroad_5.mp4',
+                    # 'video/road6.mp4',
+                    # 'video/noroad_6.mp4',
+                    # 'video/road7.mp4',
+                    # 'video/noroad_7.mp4',
+                    # 'video/road8.mp4',
+                    # 'video/diy-road7.3gp',
+                    # 'video/diy-road8.3gp',
+                    # 'video/diy-road11.3gp',
+                    # 'video/diy-road12.3gp',
+                    'video/test/test-road-1.mp4',
+                    'video/test/test-road-2.mp4',
+                    'video/test/test-road-3.mp4',
     ])

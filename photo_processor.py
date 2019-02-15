@@ -20,7 +20,8 @@ def processPhotos(input_dir=_INPUT_DIR, out_dir=_OUT_DIR):
 
     total_files = len(files)
     iteration = 1
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
+    big_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+    small_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
 
     for filename in files:
         print('Processing file', iteration, 'of', total_files, filename)
@@ -37,7 +38,7 @@ def processPhotos(input_dir=_INPUT_DIR, out_dir=_OUT_DIR):
             cv2.imshow("Prediction", nn_output)
 
         nn_output = cv2.resize(nn_output, (origin_w, origin_h), interpolation=cv2.INTER_LANCZOS4)
-        masking_threshold = 180
+        masking_threshold = 80
         masking_max = detector.max_RGB
         _, mask = cv2.threshold(nn_output,
                                 masking_threshold,
@@ -45,8 +46,12 @@ def processPhotos(input_dir=_INPUT_DIR, out_dir=_OUT_DIR):
                                 cv2.THRESH_BINARY)
 
         # Preprocess to reduce noise
-        mask = cv2.dilate(cv2.erode(mask, kernel, iterations=2), kernel, iterations=2)
-        mask = cv2.erode(cv2.dilate(mask, kernel, iterations=2), kernel, iterations=2)
+        preprocessing_iter = 2
+        mask = cv2.dilate(cv2.erode(mask, big_kernel, iterations=preprocessing_iter),
+                          small_kernel, iterations=preprocessing_iter)
+        mask = cv2.dilate(cv2.erode(mask, big_kernel, iterations=preprocessing_iter),
+                          small_kernel, iterations=preprocessing_iter)
+
         mask = mask.astype(np.uint8)
 
         out_img = Image.fromarray(mask)
@@ -66,7 +71,7 @@ if __name__ == '__main__':
             # '/home/rattus/Projects/PythonNN/datasets/noroad-maskeds',
             # '/home/rattus/Projects/PythonNN/datasets/road2and5-maskeds',
             # '/home/rattus/Projects/PythonNN/datasets/road3-maskeds',
-            '/home/rattus/Projects/PythonNN/datasets/road4-maskeds',
+            # '/home/rattus/Projects/PythonNN/datasets/road4-maskeds',
             # '/home/rattus/Projects/PythonNN/datasets/road6-maskeds',
             # '/home/rattus/Projects/PythonNN/datasets/road6-reduced',
             # '/home/rattus/Projects/PythonNN/datasets/road8-maskeds',
@@ -74,6 +79,11 @@ if __name__ == '__main__':
             # '/home/rattus/Projects/PythonNN/datasets/road10-maskeds',
             # '/home/rattus/Projects/PythonNN/datasets/road71-maskeds',
             # '/home/rattus/Projects/PythonNN/datasets/road-4-12-15-gen'
+
+            # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_5',
+            # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_6',
+            # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_7',
+            'dataset/sim'
            ]
     out_dir = '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part'
     for d in dirs:
