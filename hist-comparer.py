@@ -11,15 +11,27 @@ _INPUT_DIR = 'data/original'
 _OUTPUT_DIR = 'data/filtered'
 _MAX_CORRELATION = 0.5
 
+_OUT_HEIGHT = 640
+_OUT_WIDTH = 360
+
 np.set_printoptions(suppress=True, precision=2)
 
 
-def extract_different_frames(vid, output_dir, max_correlation=0.82, frames_to_process=maxsize):
+def extract_different_frames(vid,
+                             output_dir,
+                             max_correlation=0.82,
+                             frames_to_process=maxsize,
+                             at_least=20):
     cam = cv2.VideoCapture(vid)
     hist_len = 8
     # Overall, left and right bottom part hists
-    prev_hist = []
+    prev_l_hist = []
+    prev_r_hist = []
     saved_frames = 0
+    prev_fr = 0
+    vid_length = int(cam.get(cv2.CAP_PROP_FRAME_COUNT))
+    interval = int(vid_length / at_least)  # at least 20 frames from a video, event if they are not different
+    frames_to_process = min(frames_to_process, vid_length)
     for fr in range(0, frames_to_process):
         ret_val, original = cam.read()
         if not ret_val:
@@ -28,28 +40,39 @@ def extract_different_frames(vid, output_dir, max_correlation=0.82, frames_to_pr
         (height, width, _) = original.shape
         h_middle, v_middle = int(width/2), int(height/2)
         grey = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
-        hist = cv2.calcHist(images=[# original,
-                                    grey[v_middle:, :h_middle],
-                                    grey[v_middle:, h_middle:]],
-                            channels=[0],
-                            mask=None,
-                            histSize=[hist_len],
-                            ranges=[0, 256])
-        hist = cv2.normalize(hist, hist).flatten()
+        l_hist = cv2.calcHist(images=[grey[:, :h_middle]],
+                              channels=[0],
+                              mask=None,
+                              histSize=[hist_len],
+                              ranges=[0, 256])
+        r_hist = cv2.calcHist(images=[grey[:, h_middle:]],
+                              channels=[0],
+                              mask=None,
+                              histSize=[hist_len],
+                              ranges=[0, 256])
+        l_hist = cv2.normalize(l_hist, l_hist).flatten()
+        r_hist = cv2.normalize(r_hist, r_hist).flatten()
         if fr == 0:
             # Edge case for the first frame.
-            prev_hist = hist
+            prev_r_hist = r_hist
+            prev_l_hist = l_hist
 
-        corr = cv2.compareHist(prev_hist, hist, cv2.HISTCMP_CORREL)
+        r_corr = cv2.compareHist(prev_r_hist, r_hist, cv2.HISTCMP_CORREL)
+        l_corr = cv2.compareHist(prev_l_hist, l_hist, cv2.HISTCMP_CORREL)
         pause_ms = 1
-        print("Frame  %d corr %f" % (fr, corr))
-        if corr < max_correlation:
-            prev_hist = np.array(hist)
+        print("Frame  %d l_corr %f r_corr %f" % (fr, l_corr, r_corr))
+        if l_corr < max_correlation \
+                or r_corr < max_correlation \
+                or fr == 0 \
+                or fr - prev_fr > interval:
+            prev_fr = fr
+            prev_r_hist = np.array(r_hist)
+            prev_l_hist = np.array(l_hist)
             print("     Different frame saved.")
             savename = os.path.splitext(os.path.basename(vid))[0]
             saved = Image.fromarray(cv2.cvtColor(original, cv2.COLOR_BGR2RGB))
             saved.save(os.path.join(output_dir,
-                                    "%s_%03d.jpg" % (savename,
+                                    "%s_%04d.jpg" % (savename,
                                                      saved_frames)))
             cv2.rectangle(original,
                           (0, v_middle),
@@ -58,7 +81,16 @@ def extract_different_frames(vid, output_dir, max_correlation=0.82, frames_to_pr
                           -1)
             saved_frames += 1
             pause_ms = 50
-        cv2.imshow("Frame", original)
+        cv2.putText(original,
+                    "%s %d of %d" % (os.path.basename(vid), fr, frames_to_process),
+                    (int(width / 3), 30),
+                    cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 0, 0), 1, cv2.LINE_AA)
+        cv2.putText(original,
+                    "%s %d of %d" % (os.path.basename(vid), fr, frames_to_process),
+                    (int(width / 3) + 2, 30 + 1),
+                    cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 255), 1, cv2.LINE_AA)
+        cv2.imshow("Processing ...", original)
+
         if cv2.waitKey(pause_ms) == 27:
             break  # esc to quit
 
@@ -106,7 +138,39 @@ def move_night_photos_from_folder(input_dir, output_dir, verbose=False):
 
 if __name__ == "__main__":
     #move_night_photos_from_folder(_INPUT_DIR, _OUTPUT_DIR)
-    extract_different_frames(vid='video/road8.mp4',
-                             output_dir='data/from_vid',
-                             max_correlation=0.72)
+
+    paths = [
+        # ['O:/Datasets/vae_roader_custom/video/diy-road7.3gp', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/diy-road8.3gp', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/diy-road11.3gp', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/diy-road12.3gp', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/noroad_1.mp4', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/noroad_2.mp4', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/noroad_3.mp4', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/noroad_4.mp4', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/noroad_5.mp4', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/noroad_6.mp4', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/noroad_7.mp4', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/road1.mp4', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/road2.mp4', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/road3.mp4', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/road4.mp4', 0.72],
+        # ['O:/Datasets/vae_roader_custom/video/road5.mp4', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/road6.mp4', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/road7.mp4', 0.7],
+        # ['O:/Datasets/vae_roader_custom/video/road8.mp4', 0.7],
+        ['O:/Datasets/vae_roader_custom/video/road9.mp4', 0.65],
+        ['O:/Datasets/vae_roader_custom/video/road10.mp4', 0.65],
+        ['O:/Datasets/vae_roader_custom/video/road11.mp4', 0.65],
+        ['O:/Datasets/vae_roader_custom/video/road12.mp4', 0.65],
+        ['O:/Datasets/vae_roader_custom/video/road13.mp4', 0.65],
+        ['O:/Datasets/vae_roader_custom/video/road14.mp4', 0.65],
+        ['O:/Datasets/vae_roader_custom/video/road15.mp4', 0.65],
+    ]
+
+    for v in paths:
+        extract_different_frames(vid=v[0],
+                                 output_dir='data/from_vid',
+                                 max_correlation=v[1],
+                                 at_least=30)
 
