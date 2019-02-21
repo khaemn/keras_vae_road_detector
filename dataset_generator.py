@@ -101,6 +101,7 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT),
         assert x_img.shape == y_img.shape
 
         x_resized = cv2.resize(x_img, (gen_w, gen_h), interpolation=cv2.INTER_LINEAR)
+        x_resized = cv2.equalizeHist(x_resized)
         y_resized = cv2.resize(y_img, (gen_w, gen_h), interpolation=cv2.INTER_LINEAR)
 
         output = np.zeros((gen_h, gen_w * 2), dtype='uint8')
@@ -114,6 +115,7 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT),
 
         _SWAP_HALVES = augmenting
         _FLIP_HORIZ = augmenting
+        _SWAP_VERT_HALVES = augmenting
 
         if _SWAP_HALVES:
             hor_middle = int(gen_w / 2)
@@ -133,6 +135,27 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT),
             output_path = os.path.join(out_path, 'halved-' + filename)
             halved_output.save(output_path)
             print("    Horizontal half-swapping output")
+
+        if _SWAP_VERT_HALVES:
+            vert_middle = int(gen_h / 2)
+
+            halved_x = x_resized.copy()
+            halved_x_src = cv2.flip(halved_x, 0)
+            halved_x[:vert_middle, :] = halved_x_src[vert_middle:, :]
+            halved_x[vert_middle:, :] = halved_x_src[:vert_middle, :]
+
+            halved_y = y_resized.copy()
+            halved_y_src = cv2.flip(halved_y, 0)
+            halved_y[:vert_middle, :] = halved_y_src[vert_middle:, :]
+            halved_y[vert_middle:, :] = halved_y_src[:vert_middle, :]
+
+            halved = np.zeros((gen_h, gen_w * 2), dtype='uint8')
+            halved[:, :gen_w] = halved_x
+            halved[:, gen_w:] = halved_y
+            halved_output = Image.fromarray(halved)
+            output_path = os.path.join(out_path, 'v-swap-' + filename)
+            halved_output.save(output_path)
+            print("    Vertical half-swapping + flip output")
 
         if _FLIP_HORIZ:
             hflip_x = cv2.flip(x_resized, 1)
@@ -158,17 +181,24 @@ if __name__ == '__main__':
                                 # '/home/rattus/Projects/PythonNN/datasets/road3-maskeds',
                                 # '/home/rattus/Projects/PythonNN/datasets/road4-maskeds',
                                 # '/home/rattus/Projects/PythonNN/datasets/road6-maskeds',
-                                # '/home/rattus/Projects/PythonNN/datasets/road6-reduced',
                                 # '/home/rattus/Projects/PythonNN/datasets/road8-maskeds',
                                 # '/home/rattus/Projects/PythonNN/datasets/road9-maskeds',
                                 # '/home/rattus/Projects/PythonNN/datasets/road10-maskeds',
                                 # '/home/rattus/Projects/PythonNN/datasets/road71-maskeds',
                                 # '/home/rattus/Projects/PythonNN/datasets/road-4-12-15-gen',
                                 # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_1',
-                                '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_2',
-                                '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_3',
-                                '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_4',
+                                # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_2',
+                                # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_3',
+                                # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_4',
+                                # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_5',
+                                # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_7',
+                                # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part1'
+
+                                # Test!!!;
+                                # '/home/rattus/Projects/PythonNN/datasets/downloaded-assorted'
+                                '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fkievvid',
                                ],
                        out_dir='/home/rattus/Projects/PythonNN/datasets/1-OUT')
+                       # out_dir = '/home/rattus/Projects/PythonNN/datasets/downloaded-assorted/data')
 
 

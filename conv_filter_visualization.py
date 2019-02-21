@@ -37,12 +37,12 @@ def normalize(x):
     return x / (K.sqrt(K.mean(K.square(x))) + K.epsilon())
 
 # dimensions of the generated pictures for each filter.
-img_width = 256  # 128
+img_width = 128  # 128
 img_height = img_width # 256  # 128
 channel_count = 1  # 1 for grey, 3 for rgb
 
 
-_MODEL_FILENAME = 'models/model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/mini_model_yolike_roader.h5'
 model = load_model(_MODEL_FILENAME)
 
 print('Model loaded.')
@@ -58,7 +58,7 @@ layer_dict = dict([(layer.name, layer) for layer in model.layers[0:]])
 def plotFiltersFor(layer_name, filter_count=8):
     kept_filters = []
     total_filters = filter_count
-    gradient_steps = 100
+    gradient_steps = 300
 
     # we start from a gray image with some random noise
     if K.image_data_format() == 'channels_first':
@@ -101,7 +101,7 @@ def plotFiltersFor(layer_name, filter_count=8):
             loss_value, grads_value = iterate([input_img_data])
             input_img_data += grads_value * step
 
-            print('Current loss value:', loss_value)
+            # print('Current loss value:', loss_value)
             if loss_value <= 0.:
                 # some filters get stuck to 0, we can skip them
                 break
@@ -112,8 +112,9 @@ def plotFiltersFor(layer_name, filter_count=8):
             img = deprocess_image(input_img_data[0])
             kept_filters.append((img, loss_value))
         end_time = time.time()
-        print('Filter %d processed in %ds' % (filter_index, end_time - start_time))
+        print('Filter %d processed in %d s' % (filter_index, end_time - start_time))
 
+    print("Total %d filters kept for layer %s" % (len(kept_filters, layer_name)))
     # we will stitch the best 64 filters on a 8 x 8 grid.
     n = max(1, int(math.sqrt(abs(len(kept_filters) - 1))))
 
@@ -129,7 +130,7 @@ def plotFiltersFor(layer_name, filter_count=8):
     height = n * img_height + (n - 1) * margin
     stitched_filters = np.zeros((width, height, 3))
 
-    print("Kept filters:", len(kept_filters))
+    print("Maximum influence from kept filters:", len(kept_filters))
     if len(kept_filters) > 0:
         # fill the picture with our saved filters
         for i in range(n):
@@ -144,15 +145,18 @@ def plotFiltersFor(layer_name, filter_count=8):
 
     # save the result to disk
     save_img('filters/' + layer_name + ('_stitched_filters_%dx%d.png' % (n, n)), stitched_filters)
+    del kept_filters
+    del stitched_filters
 
 # the name of the layer we want to visualize
 # (see model definition at keras/applications/vgg16.py)
-layer_names = [ ['Encoder_CONV2D_1', 8],
-                ['Encoder_CONV2D_2', 16],
-                ['Encoder_CONV2D_3', 32],
+layer_names = [
+                ['Encoder_CONV2D_6', 128],
+                ['Encoder_CONV2D_5', 64],
                 ['Encoder_CONV2D_4', 32],
-                ['Encoder_CONV2D_5', 32],
-                ['Encoder_CONV2D_6', 32],
+                ['Encoder_CONV2D_3', 16],
+                ['Encoder_CONV2D_2', 4],
+                # ['Encoder_CONV2D_1', 8],
 
                 #['Decoder_CONV2D_1', 8],
                 #['Decoder_CONV2D_2', 16],

@@ -5,7 +5,7 @@ import os
 import cv2
 from video_processor import RoadDetector
 
-_MODEL_FILENAME = 'models/model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/mini_model_yolike_roader.h5'
 _INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/nexet-1/images/'
 _OUT_DIR = '/home/rattus/Projects/PythonNN/datasets/nexet-1/gen_masks/'
 _SHOW = False
@@ -65,7 +65,7 @@ def processPhotos(input_dir=_INPUT_DIR, out_dir=_OUT_DIR):
 
 if __name__ == '__main__':
     dirs = [
-            # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part',
+            # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part2',
             # '/home/rattus/Projects/PythonNN/datasets/downloaded-assorted',
             # '/home/rattus/Projects/PythonNN/datasets/nexet_example',
             # '/home/rattus/Projects/PythonNN/datasets/noroad-maskeds',
@@ -83,9 +83,11 @@ if __name__ == '__main__':
             # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_5',
             # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_6',
             # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_7',
-            'dataset/sim'
+            # 'dataset/sim'
+            '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fkievvid',
            ]
-    out_dir = '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part'
+    out_dir = '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fkievvid'
+    #  '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part2'
     for d in dirs:
         path = os.path.join(d, 'images')
         out_path = os.path.join(d, 'gen-masks')

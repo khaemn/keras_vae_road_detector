@@ -13,7 +13,7 @@ _INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/1-OUT'
 _OUTPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/2-TEXTURED'
 
 _H_COUNT = 41
-_V_COUNT = 62
+_V_COUNT = 43
 _DATA_BATCH_SIZE = _V_COUNT * _H_COUNT
 
 _IMG_WIDTH = 320 * 2  # 160  # 320

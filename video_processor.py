@@ -2,9 +2,10 @@ from keras.models import Sequential, load_model
 import numpy as np
 import cv2
 import time
+import os
 import datetime
 
-_MODEL_FILENAME = 'models/model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/mini_model_yolike_roader.h5'
 
 _STACK_PREDICTIONS = False
 _STACK_DEPTH = 10
@@ -28,11 +29,15 @@ class RoadDetector:
 
     def predict(self, _input):
         (original_height, original_width) = _input.shape
-        # _input = cv2.cvtColor(_input, cv2.COLOR_RGB2GRAY)
         # Resizing to acceptable size
-        resized = cv2.resize(_input, (self.input_width, self.input_height))
+        if original_height != self.input_height or original_width != self.input_width:
+            resized = cv2.resize(_input, (self.input_width, self.input_height))
+        else:
+            resized = _input
+        # Gamma preprocessing to increase sensitivity
+        normalized = cv2.equalizeHist(resized)
         # Normalization
-        normalized = resized / self.max_RGB
+        normalized = normalized / self.max_RGB
         # Prediction
         model_input = np.array([normalized])
         model_input = model_input.reshape((1, self.input_height, self.input_width, 1))
@@ -58,6 +63,17 @@ class RoadDetector:
 
         mask = mask.astype(np.uint8)
         return mask
+
+    # https://www.pyimagesearch.com/2015/10/05/opencv-gamma-correction/
+    def adjust_gamma(self, image, gamma=1.0):
+        # build a lookup table mapping the pixel values [0, 255] to
+        # their adjusted gamma values
+        invGamma = 1.0 / gamma
+        table = np.array([((i / 255.0) ** invGamma) * 255
+                          for i in np.arange(0, 256)]).astype("uint8")
+
+        # apply gamma correction using the lookup table
+        return cv2.LUT(image, table)
 
 def simple_test():
     detector = RoadDetector()
@@ -85,7 +101,7 @@ def process_video(paths):
     frames_to_process = _TOTAL_FRAMES
     framestack = list()
     big_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
-    small_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+    small_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
     masking_threshold = detector.mask_thresholds[0]
     masking_max = RoadDetector.max_RGB
 
@@ -104,13 +120,14 @@ def process_video(paths):
             # original = cv2.flip(original, 0)
 
             dataForNN = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
+            dataForNN = cv2.resize(dataForNN, (RoadDetector.input_width, RoadDetector.input_height))
 
             # start = datetime.datetime.now()  # time.process_time()
 
             prediction = detector.predict(dataForNN)
 
             rawmask = prediction.copy()
-            rawmask_size = 0.25
+            rawmask_size = 0.2
             rawmask = cv2.resize(rawmask, (int(wr_width * rawmask_size), int(wr_height * rawmask_size)))
             rawmask = cv2.cvtColor(rawmask, cv2.COLOR_GRAY2BGR)
 
@@ -124,6 +141,9 @@ def process_video(paths):
 
             vis_min_mask = cv2.resize(min_mask, (int(wr_width * rawmask_size), int(wr_height * rawmask_size)))
             vis_min_mask = cv2.cvtColor(vis_min_mask, cv2.COLOR_GRAY2BGR)
+
+            input_mini = cv2.resize(dataForNN, (int(wr_width * rawmask_size), int(wr_height * rawmask_size)))
+            input_mini = cv2.cvtColor(input_mini, cv2.COLOR_GRAY2BGR)
 
             processed = cv2.resize(min_mask, (wr_width, wr_height), interpolation=cv2.INTER_LANCZOS4)
             _, mask = cv2.threshold(processed,
@@ -141,15 +161,27 @@ def process_video(paths):
             cv2.addWeighted(combined, 1 - alpha, color_fill, alpha, 0, combined)
 
             # overlaying a raw mask image to top left corner
-            combined[:rawmask.shape[0], :rawmask.shape[1]] = rawmask
-            combined[:vis_min_mask.shape[0],
-                     rawmask.shape[1]:rawmask.shape[1] + vis_min_mask.shape[1]] = vis_min_mask
+            y_vis_offs = rawmask.shape[0]
+            x_vis_offs = rawmask.shape[1]
+            combined[:y_vis_offs, :x_vis_offs] = cv2.resize(input_mini, (x_vis_offs, y_vis_offs))
+            combined[:y_vis_offs,
+                     x_vis_offs:x_vis_offs*2] = vis_min_mask
+            combined[:y_vis_offs,
+                     x_vis_offs*2:x_vis_offs*3] = vis_min_mask
 
             # Printing the threshold value
             text = "Threshold %02d of %02d" % (masking_threshold, masking_max)
             cv2.putText(combined, text, (int(wr_width / 3), rawmask.shape[0] + 30),
                         cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 0, 0), 1, cv2.LINE_AA)
             cv2.putText(combined, text, (int(wr_width / 3) + 2, rawmask.shape[0] + 30 + 2),
+                        cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 255), 1, cv2.LINE_AA)
+            cv2.putText(combined,
+                        "%s %d of %d" % (os.path.basename(path), fr, frames_to_process),
+                        (int(wr_width / 3), 30),
+                        cv2.FONT_HERSHEY_TRIPLEX, 1, (0, 0, 0), 1, cv2.LINE_AA)
+            cv2.putText(combined,
+                        "%s %d of %d" % (os.path.basename(path), fr, frames_to_process),
+                        (int(wr_width / 3) + 2, 30 + 1),
                         cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 255, 255), 1, cv2.LINE_AA)
 
             # do some stuff
@@ -172,32 +204,32 @@ def process_video(paths):
 
 if __name__ == '__main__':
     process_video([
-                    # 'video/road15.mp4',
-                    # 'video/road9.mp4',
-                    # 'video/road10.mp4',
-                    # 'video/road11.mp4',
-                    # 'video/road12.mp4',
-                    # 'video/road13.mp4',
-                    # 'video/road14.mp4',
-                    # 'video/road1.mp4',
-                    # 'video/noroad_1.mp4',
-                    # 'video/road2.mp4',
-                    # 'video/noroad_2.mp4',
-                    # 'video/road3.mp4',
-                    # 'video/noroad_3.mp4',
-                    # 'video/road4.mp4',
-                    # 'video/noroad_4.mp4',
-                    # 'video/road5.mp4',
-                    # 'video/noroad_5.mp4',
-                    # 'video/road6.mp4',
-                    # 'video/noroad_6.mp4',
-                    # 'video/road7.mp4',
-                    # 'video/noroad_7.mp4',
-                    # 'video/road8.mp4',
-                    # 'video/diy-road7.3gp',
-                    # 'video/diy-road8.3gp',
-                    # 'video/diy-road11.3gp',
-                    # 'video/diy-road12.3gp',
+                    'video/road15.mp4',
+                    'video/road9.mp4',
+                    'video/road10.mp4',
+                    'video/road11.mp4',
+                    'video/road12.mp4',
+                    'video/road13.mp4',
+                    'video/road14.mp4',
+                    'video/road1.mp4',
+                    'video/noroad_1.mp4',
+                    'video/road2.mp4',
+                    'video/noroad_2.mp4',
+                    'video/road3.mp4',
+                    'video/noroad_3.mp4',
+                    'video/road4.mp4',
+                    'video/noroad_4.mp4',
+                    'video/road5.mp4',
+                    'video/noroad_5.mp4',
+                    'video/road6.mp4',
+                    'video/noroad_6.mp4',
+                    'video/road7.mp4',
+                    'video/noroad_7.mp4',
+                    'video/road8.mp4',
+                    'video/diy-road7.3gp',
+                    'video/diy-road8.3gp',
+                    'video/diy-road11.3gp',
+                    'video/diy-road12.3gp',
                     'video/test/test-road-1.mp4',
                     'video/test/test-road-2.mp4',
                     'video/test/test-road-3.mp4',

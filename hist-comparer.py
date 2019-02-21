@@ -159,18 +159,25 @@ if __name__ == "__main__":
         # ['O:/Datasets/vae_roader_custom/video/road6.mp4', 0.7],
         # ['O:/Datasets/vae_roader_custom/video/road7.mp4', 0.7],
         # ['O:/Datasets/vae_roader_custom/video/road8.mp4', 0.7],
-        ['O:/Datasets/vae_roader_custom/video/road9.mp4', 0.65],
-        ['O:/Datasets/vae_roader_custom/video/road10.mp4', 0.65],
-        ['O:/Datasets/vae_roader_custom/video/road11.mp4', 0.65],
-        ['O:/Datasets/vae_roader_custom/video/road12.mp4', 0.65],
-        ['O:/Datasets/vae_roader_custom/video/road13.mp4', 0.65],
-        ['O:/Datasets/vae_roader_custom/video/road14.mp4', 0.65],
-        ['O:/Datasets/vae_roader_custom/video/road15.mp4', 0.65],
+        # ['O:/Datasets/vae_roader_custom/video/road9.mp4', 0.65],
+        # ['O:/Datasets/vae_roader_custom/video/road10.mp4', 0.65],
+        # ['O:/Datasets/vae_roader_custom/video/road11.mp4', 0.65],
+        # ['O:/Datasets/vae_roader_custom/video/road12.mp4', 0.65],
+        # ['O:/Datasets/vae_roader_custom/video/road13.mp4', 0.65],
+        # ['O:/Datasets/vae_roader_custom/video/road14.mp4', 0.65],
+        # ['O:/Datasets/vae_roader_custom/video/road15.mp4', 0.65],
+        ['/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/video/kiev/kiev1.mp4', 0.65],
+        ['/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/video/kiev/kiev2.mp4', 0.65],
+        ['/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/video/kiev/kiev3.mp4', 0.65],
+        ['/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/video/kiev/kiev4.mp4', 0.65],
+
     ]
 
     for v in paths:
         extract_different_frames(vid=v[0],
-                                 output_dir='data/from_vid',
+                                 # output_dir='data/from_vid',
+                                 output_dir='/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fkievvid',
+                                 # fkievvid
                                  max_correlation=v[1],
                                  at_least=30)
 
