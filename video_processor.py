@@ -11,7 +11,7 @@ _STACK_PREDICTIONS = False
 _STACK_DEPTH = 10
 _STACK_DECAY = 0.5
 
-_FRAME_DIVIDER = 5
+_FRAME_DIVIDER = 1
 _TOTAL_FRAMES = 5000
 
 class RoadDetector:
@@ -21,7 +21,7 @@ class RoadDetector:
     input_height = 180  # 90
     input_width = 320  # 160
     # N thresholds will produce N masks of N colors
-    mask_thresholds = [60, 200, 240]
+    mask_thresholds = [150, 200, 240]
     fill_colors = [[255, 50, 255], [255, 255, 50], [50, 255, 255]]
 
     def __init__(self, modelFile=_MODEL_FILENAME):
@@ -204,33 +204,36 @@ def process_video(paths):
 
 if __name__ == '__main__':
     process_video([
-                    'video/road15.mp4',
-                    'video/road9.mp4',
-                    'video/road10.mp4',
-                    'video/road11.mp4',
-                    'video/road12.mp4',
-                    'video/road13.mp4',
-                    'video/road14.mp4',
-                    'video/road1.mp4',
-                    'video/noroad_1.mp4',
-                    'video/road2.mp4',
-                    'video/noroad_2.mp4',
-                    'video/road3.mp4',
-                    'video/noroad_3.mp4',
-                    'video/road4.mp4',
-                    'video/noroad_4.mp4',
-                    'video/road5.mp4',
-                    'video/noroad_5.mp4',
-                    'video/road6.mp4',
-                    'video/noroad_6.mp4',
-                    'video/road7.mp4',
-                    'video/noroad_7.mp4',
-                    'video/road8.mp4',
-                    'video/diy-road7.3gp',
-                    'video/diy-road8.3gp',
-                    'video/diy-road11.3gp',
-                    'video/diy-road12.3gp',
-                    'video/test/test-road-1.mp4',
-                    'video/test/test-road-2.mp4',
-                    'video/test/test-road-3.mp4',
+                    # 'video/road16.mp4',
+                    # 'video/road15.mp4',
+                    # 'video/road9.mp4',
+                    # 'video/road10.mp4',
+                    # 'video/road11.mp4',
+                    # 'video/road12.mp4',
+                    # 'video/road13.mp4',
+                    # 'video/road14.mp4',
+                    # 'video/road1.mp4',
+                    # 'video/noroad_1.mp4',
+                    # 'video/road2.mp4',
+                    # 'video/noroad_2.mp4',
+                    # 'video/road3.mp4',
+                    # 'video/noroad_3.mp4',
+                    # 'video/road4.mp4',
+                    # 'video/noroad_4.mp4',
+                    # 'video/road5.mp4',
+                    # 'video/noroad_5.mp4',
+                    # 'video/road6.mp4',
+                    # 'video/noroad_6.mp4',
+                    # 'video/road7.mp4',
+                    # 'video/noroad_7.mp4',
+                    # 'video/road8.mp4',
+                    # 'video/diy-road7.3gp',
+                    # 'video/diy-road8.3gp',
+                    # 'video/diy-road11.3gp',
+                    # 'video/diy-road12.3gp',
+                    # 'video/test/test-road-1.mp4',
+                    # 'video/test/test-road-2.mp4',
+                    # 'video/test/test-road-3.mp4',
+                    # 'video/kiev/kiev2.mp4',
+                    'video/kiev/kiev5.mp4',
     ])

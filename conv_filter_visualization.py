@@ -11,6 +11,9 @@ from keras.preprocessing.image import save_img
 from keras import backend as K
 from keras.models import load_model
 import math
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
+from time import sleep
 
 
 # util function to convert a tensor into a valid image
@@ -18,10 +21,10 @@ def deprocess_image(x):
     # normalize tensor: center on 0., ensure std is 0.1
     x -= x.mean()
     x /= (x.std() + K.epsilon())
-    x *= 0.1
+    x *= 0.3
 
     # clip to [0, 1]
-    x += 0.5
+    x += 0.3  # 0.5
     x = np.clip(x, 0, 1)
 
     # convert to RGB array
@@ -37,7 +40,7 @@ def normalize(x):
     return x / (K.sqrt(K.mean(K.square(x))) + K.epsilon())
 
 # dimensions of the generated pictures for each filter.
-img_width = 128  # 128
+img_width = 300  # 128
 img_height = img_width # 256  # 128
 channel_count = 1  # 1 for grey, 3 for rgb
 
@@ -55,10 +58,84 @@ input_img = model.input
 
 layer_dict = dict([(layer.name, layer) for layer in model.layers[0:]])
 
+def multi_process_filter(iter_functor, kept_filters, kept_filters_lock, input_img_data):
+    print('Calculating gradients...')
+    step = 1
+    gradient_steps = 100
+    # we run gradient ascent for N steps
+    for i in range(gradient_steps):
+        loss_value, grads_value = iter_functor([input_img_data])
+        input_img_data += grads_value * step
+
+        # print('Current loss value:', loss_value)
+        if loss_value <= 0.:
+            # some filters get stuck to 0, we can skip them
+            break
+
+    # decode the resulting input image
+    if loss_value > 0:
+        img = deprocess_image(input_img_data[0])
+        kept_filters_lock.acquire()
+        kept_filters.append((img, loss_value))
+        kept_filters_lock.release()
+
+
+def process_filter(layer_name, filter_index, total_filters, kept_filters, kept_filters_lock, input_img_data, gradient_steps):
+    print('Processing filter %d of %d' % (filter_index, total_filters))
+    start_time = time.time()
+
+    # we build a loss function that maximizes the activation
+    # of the nth filter of the layer considered
+    layer_output = layer_dict[layer_name].output
+    # if K.image_data_format() == 'channels_first':
+    #     loss = K.mean(layer_output[:, filter_index, :, :])
+    # else:
+    loss = K.mean(layer_output[:, :, :, filter_index])
+
+    print('Getting gradients...')
+    # we compute the gradient of the input picture wrt this loss
+    grads = K.gradients(loss, input_img)[0]
+
+    # normalization trick: we normalize the gradient
+    grads = normalize(grads)
+
+    # this function returns the loss and grads given the input picture
+    iterate = K.function([input_img], [loss, grads])
+
+    # step size for gradient ascent
+    step = 1.
+
+    print('Filling randoms...')
+
+    print('Calculating gradients...')
+    # we run gradient ascent for N steps
+    for i in range(gradient_steps):
+        loss_value, grads_value = iterate([input_img_data])
+        input_img_data += grads_value * step
+
+        # print('Current loss value:', loss_value)
+        if loss_value <= 0.:
+            # some filters get stuck to 0, we can skip them
+            break
+
+    # decode the resulting input image
+    if loss_value > 0:
+        print('Deprocessing image...')
+        img = deprocess_image(input_img_data[0])
+        kept_filters_lock.acquire()
+        kept_filters.append((img, loss_value))
+        kept_filters_lock.release()
+    end_time = time.time()
+    print('Filter %d processed in %d s' % (filter_index, end_time - start_time))
+    return
+
 def plotFiltersFor(layer_name, filter_count=8):
+
     kept_filters = []
+    kept_filters_lock = Lock()
+
     total_filters = filter_count
-    gradient_steps = 300
+    gradient_steps = 200
 
     # we start from a gray image with some random noise
     if K.image_data_format() == 'channels_first':
@@ -67,54 +144,51 @@ def plotFiltersFor(layer_name, filter_count=8):
         origin_input_img_data = np.random.random((1, img_width, img_height, channel_count))
     origin_input_img_data = (origin_input_img_data - 0.5) * 20 + 128
 
+    executor = ThreadPoolExecutor(max_workers=16)
+    # a = executor.submit(my_function)
+
+    tasks = []
     for filter_index in range(total_filters):  # number of filters in the conv layer
-        print('Processing filter %d of %d' % (filter_index, total_filters))
-        start_time = time.time()
+        process_filter(layer_name,
+                       filter_index,
+                       total_filters,
+                       kept_filters,
+                       kept_filters_lock,
+                       origin_input_img_data.copy(),
+                       gradient_steps)
+    #     print('Processing filter %d of %d' % (filter_index, total_filters))
+    #     # we build a loss function that maximizes the activation
+    #     # of the nth filter of the layer considered
+    #     layer_output = layer_dict[layer_name].output
+    #     # if K.image_data_format() == 'channels_first':
+    #     #     loss = K.mean(layer_output[:, filter_index, :, :])
+    #     # else:
+    #     loss = K.mean(layer_output[:, :, :, filter_index])
+    #
+    #     print('Getting gradients...')
+    #     # we compute the gradient of the input picture wrt this loss
+    #     grads = K.gradients(loss, input_img)[0]
+    #
+    #     # normalization trick: we normalize the gradient
+    #     grads = normalize(grads)
+    #
+    #     # this function returns the loss and grads given the input picture
+    #     iterate = K.function([input_img], [loss, grads])
+    #     print('Submitting filter %d of %d' % (filter_index, total_filters))
+    #     tasks.append(executor.submit(
+    #         multi_process_filter,
+    #         iterate,
+    #         kept_filters,
+    #         kept_filters_lock,
+    #         origin_input_img_data.copy()))
+    # print("Tasks for this layer:" % len(tasks))
+    #
+    # # Wait the executor to complete each future, give 180 seconds for each job
+    # for idx, future in enumerate(as_completed(tasks, timeout=180.0)):
+    #     res = future.result()  # This will also raise any exceptions
+    #     print("Processed job", idx, "result", res)
 
-        # we build a loss function that maximizes the activation
-        # of the nth filter of the layer considered
-        layer_output = layer_dict[layer_name].output
-        if K.image_data_format() == 'channels_first':
-            loss = K.mean(layer_output[:, filter_index, :, :])
-        else:
-            loss = K.mean(layer_output[:, :, :, filter_index])
-
-        print('Getting gradients...')
-        # we compute the gradient of the input picture wrt this loss
-        grads = K.gradients(loss, input_img)[0]
-
-        # normalization trick: we normalize the gradient
-        grads = normalize(grads)
-
-        # this function returns the loss and grads given the input picture
-        iterate = K.function([input_img], [loss, grads])
-
-        # step size for gradient ascent
-        step = 1.
-
-        print('Filling randoms...')
-
-        input_img_data = origin_input_img_data.copy()
-        print('Calculating gradients...')
-        # we run gradient ascent for N steps
-        for i in range(gradient_steps):
-            loss_value, grads_value = iterate([input_img_data])
-            input_img_data += grads_value * step
-
-            # print('Current loss value:', loss_value)
-            if loss_value <= 0.:
-                # some filters get stuck to 0, we can skip them
-                break
-
-        # decode the resulting input image
-        if loss_value > 0:
-            print('Deprocessing image...')
-            img = deprocess_image(input_img_data[0])
-            kept_filters.append((img, loss_value))
-        end_time = time.time()
-        print('Filter %d processed in %d s' % (filter_index, end_time - start_time))
-
-    print("Total %d filters kept for layer %s" % (len(kept_filters, layer_name)))
+    print("Total %d filters kept for layer %s" % (len(kept_filters), layer_name))
     # we will stitch the best 64 filters on a 8 x 8 grid.
     n = max(1, int(math.sqrt(abs(len(kept_filters) - 1))))
 
@@ -151,12 +225,12 @@ def plotFiltersFor(layer_name, filter_count=8):
 # the name of the layer we want to visualize
 # (see model definition at keras/applications/vgg16.py)
 layer_names = [
-                ['Encoder_CONV2D_6', 128],
+                ['Encoder_CONV2D_6', 96],
                 ['Encoder_CONV2D_5', 64],
-                ['Encoder_CONV2D_4', 32],
-                ['Encoder_CONV2D_3', 16],
-                ['Encoder_CONV2D_2', 4],
-                # ['Encoder_CONV2D_1', 8],
+                #['Encoder_CONV2D_4', 32],
+                #['Encoder_CONV2D_3', 16],
+                #['Encoder_CONV2D_2', 4],
+                #['Encoder_CONV2D_1', 4],
 
                 #['Decoder_CONV2D_1', 8],
                 #['Decoder_CONV2D_2', 16],

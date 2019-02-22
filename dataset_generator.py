@@ -51,6 +51,25 @@ def generate_from_dirs(in_dirs, out_dir, batch_dims=(1,1)):
     print("Elapsed time %s" % total_time)
 
 
+def generate_noise(xresolution=(_X_WIDTH, _X_HEIGHT), out_path="", filecount=1):
+
+    (gen_w, gen_h) = xresolution;
+    scale = 8
+
+    for i in range(0, filecount):
+        x_data = np.random.random((gen_h // scale, gen_w // scale))
+        x_data *= 255
+        x_data = x_data.astype('uint8')
+        x_data = cv2.resize(x_data, (gen_w, gen_h))
+        output = np.zeros((gen_h, gen_w * 2), dtype='uint8')
+        output[:, :gen_w] = x_data
+
+        f_output = Image.fromarray(output)
+        output_path = os.path.join(out_path, "noised-%d.jpg" % i)
+        f_output.save(output_path)
+        print("    Noised output")
+    return True
+
 def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT),
                      x_input=_X_INPUT_DIR,
                      y_input=_Y_INPUT_DIR,
@@ -172,6 +191,10 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT),
 
 if __name__ == '__main__':
     # generate_dataset()
+
+    generate_noise(out_path='/home/rattus/Projects/PythonNN/datasets/2-TEXTURED',
+                   filecount=5)
+    quit()
     generate_from_dirs(in_dirs=[
                                 # '/home/rattus/Projects/PythonNN/datasets/diy-road-photos',
                                 # '/home/rattus/Projects/PythonNN/datasets/downloaded-assorted',
