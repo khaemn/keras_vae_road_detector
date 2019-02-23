@@ -43,7 +43,7 @@ def generate_from_dirs(in_dirs, out_dir, batch_dims=(1,1)):
         total_files += generate_dataset(x_input=x_inp,
                                         y_input=y_inp,
                                         out_path=out_dir,
-                                        augmenting=True,
+                                        augmenting=False,
                                         batch_dims=(1, 1))
     end = datetime.datetime.now()
     total_time = end - start
@@ -54,7 +54,7 @@ def generate_from_dirs(in_dirs, out_dir, batch_dims=(1,1)):
 def generate_noise(xresolution=(_X_WIDTH, _X_HEIGHT), out_path="", filecount=1):
 
     (gen_w, gen_h) = xresolution;
-    scale = 8
+    scale = 12
 
     for i in range(0, filecount):
         x_data = np.random.random((gen_h // scale, gen_w // scale))
@@ -192,9 +192,9 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT),
 if __name__ == '__main__':
     # generate_dataset()
 
-    generate_noise(out_path='/home/rattus/Projects/PythonNN/datasets/2-TEXTURED',
-                   filecount=5)
-    quit()
+    # generate_noise(out_path='/home/rattus/Projects/PythonNN/datasets/2-TEXTURED',
+    #                filecount=5)
+    # quit()
     generate_from_dirs(in_dirs=[
                                 # '/home/rattus/Projects/PythonNN/datasets/diy-road-photos',
                                 # '/home/rattus/Projects/PythonNN/datasets/downloaded-assorted',
@@ -206,7 +206,7 @@ if __name__ == '__main__':
                                 # '/home/rattus/Projects/PythonNN/datasets/road6-maskeds',
                                 # '/home/rattus/Projects/PythonNN/datasets/road8-maskeds',
                                 # '/home/rattus/Projects/PythonNN/datasets/road9-maskeds',
-                                # '/home/rattus/Projects/PythonNN/datasets/road10-maskeds',
+                                '/home/rattus/Projects/PythonNN/datasets/road10-maskeds',
                                 # '/home/rattus/Projects/PythonNN/datasets/road71-maskeds',
                                 # '/home/rattus/Projects/PythonNN/datasets/road-4-12-15-gen',
                                 # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_1',
@@ -216,12 +216,14 @@ if __name__ == '__main__':
                                 # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_5',
                                 # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_7',
                                 # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part1'
+                                # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part3',
 
                                 # Test!!!;
                                 # '/home/rattus/Projects/PythonNN/datasets/downloaded-assorted'
-                                '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fkievvid',
+                                # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fkievvid',
                                ],
-                       out_dir='/home/rattus/Projects/PythonNN/datasets/1-OUT')
+                       out_dir='/home/rattus/Projects/PythonNN/datasets/3-TEST')
+                    # out_dir='/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part3')
                        # out_dir = '/home/rattus/Projects/PythonNN/datasets/downloaded-assorted/data')
 
 

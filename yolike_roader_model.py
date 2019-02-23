@@ -14,8 +14,8 @@ from time import sleep
 
 random.seed(777)
 
-_EXISTING_MODEL_FILENAME = 'models/model_yolike_roader.h5'
-_MODEL_FILENAME = 'models/model_yolike_roader.h5'
+_EXISTING_MODEL_FILENAME = 'models/t_model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/t_model_yolike_roader.h5'
 _TRAIN_DATA_DIR = '/home/rattus/Projects/PythonNN/datasets/3-TRAIN'
 _PRETRAIN_DATA_DIR = 'D:/__PROJECTS/PythonNN/keras_vae_road_detector/data/test1'
 _PRETRAIN_DATA_DIR2 = 'D:/__PROJECTS/PythonNN/keras_vae_road_detector/data/test2'
@@ -34,7 +34,7 @@ _PRETRAIN_VERTICAL_BATCH_SIZE = 40
 
 
 # If true, model is not compiled from scratch> but loaded from the file.
-_LOAD_MODEL = True
+_LOAD_MODEL = False
 
 # When in pretrain run, unlabeled data is used, and therefore mask is ignored.
 _PRETRAIN = False
@@ -184,7 +184,9 @@ def load_pretrain_data(path=_PRETRAIN_DATA_DIR):
         print("Loaded %d pieces of data." % data_pieces_loaded)
     return X, Y
 
-def get_model():
+
+
+def get_tiny_model():
     print("Building model ...")
     model_init = "he_uniform"
     leak_alpha = 0.1
@@ -193,7 +195,7 @@ def get_model():
     # input_img = Input(shape=(img_height, img_width, 3))  # adapt this if using `channels_first` image data format
     input_img = Input(shape=(img_height, img_width, 1))  # adapt this if using `channels_first` image data format
 
-    x = Conv2D(8, (3, 3), kernel_initializer=model_init, # trainable=_PRETRAIN,
+    x = Conv2D(16, (3, 3), kernel_initializer=model_init, # trainable=_PRETRAIN,
                padding='same', name='Encoder_CONV2D_1')(input_img)
     x = BatchNormalization()(x)
     x = LeakyReLU(alpha=leak_alpha)(x)
@@ -214,28 +216,43 @@ def get_model():
     x = MaxPooling2D((2, 2), padding='same')(x)
     x = Dropout(dropout)(x)
 
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_4a'
+              , activation='relu')(x)
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_4b'
+              , activation='relu')(x)
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_4c'
+              , activation='relu')(x)
+    x = MaxPooling2D((2, 2), padding='same')(x)
+
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_5a'
+              , activation='relu')(x)
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_5b'
+              , activation='relu')(x)
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_5c'
+              , activation='relu')(x)
+    x = MaxPooling2D((2, 2), padding='same')(x)
+
     x = Conv2D(64, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
-               padding='same', name='Encoder_CONV2D_4')(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU(alpha=leak_alpha)(x)
-    x = MaxPooling2D((2, 2), padding='same')(x)
-
-    x = Conv2D(128, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
-               padding='same', name='Encoder_CONV2D_5')(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU(alpha=leak_alpha)(x)
-    x = MaxPooling2D((2, 2), padding='same')(x)
-
-    x = Conv2D(384, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
-               padding='same', name='Encoder_CONV2D_6')(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU(alpha=leak_alpha)(x)
+               padding='same', name='Encoder_CONV2D_6a'
+              , activation='relu')(x)
+    x = Conv2D(64, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_6b'
+              , activation='relu')(x)
+    x = Conv2D(64, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_6c'
+              , activation='relu')(x)
     x = MaxPooling2D((2, 2), padding='same')(x)
 
     # at this point the representation is (6, 10, 128)
 
     x = UpSampling2D((2, 2))(x)
-    x = Conv2D(384, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_6')(x)
+    x = Conv2D(64, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_6')(x)
     x = LeakyReLU(alpha=leak_alpha)(x)
 
     x = UpSampling2D((2, 2))(x)
@@ -243,101 +260,15 @@ def get_model():
     x = LeakyReLU(alpha=leak_alpha)(x)
 
     x = UpSampling2D((2, 2))(x)
-    x = Conv2D(16, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_4')(x)
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_4')(x)
     x = LeakyReLU(alpha=leak_alpha)(x)
 
     x = UpSampling2D((2, 2))(x)
-    x = Conv2D(16, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_3')(x)
+    x = Conv2D(8, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_3')(x)
     x = LeakyReLU(alpha=leak_alpha)(x)
 
     x = UpSampling2D((2, 2))(x)
-    x = Conv2D(8, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_2')(x)
-    x = LeakyReLU(alpha=leak_alpha)(x)
-
-    x = UpSampling2D((2, 2))(x)
-    x = Conv2D(8, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_1')(x)
-    x = LeakyReLU(alpha=leak_alpha)(x)
-
-    decoded = Conv2D(1, (3, 3), activation='sigmoid', kernel_initializer=model_init, padding='same')(x)
-
-    autoencoder = Model(input_img, decoded)
-    autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy',
-                        metrics=['accuracy'])
-    print("Built model info:\n")
-    autoencoder.summary()
-    return autoencoder
-
-def get_mini_model():
-    print("Building model ...")
-    model_init = "he_uniform"
-    leak_alpha = 0.1
-    dropout = 0.1
-
-    # input_img = Input(shape=(img_height, img_width, 3))  # adapt this if using `channels_first` image data format
-    input_img = Input(shape=(img_height, img_width, 1))  # adapt this if using `channels_first` image data format
-
-    x = Conv2D(4, (3, 3), kernel_initializer=model_init, # trainable=_PRETRAIN,
-               padding='same', name='Encoder_CONV2D_1')(input_img)
-    x = BatchNormalization()(x)
-    x = LeakyReLU(alpha=leak_alpha)(x)
-    x = MaxPooling2D((2, 2), padding='same')(x)
-    x = Dropout(dropout)(x)
-
-    x = Conv2D(4, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
-               padding='same', name='Encoder_CONV2D_2')(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU(alpha=leak_alpha)(x)
-    x = MaxPooling2D((2, 2), padding='same')(x)
-    x = Dropout(dropout)(x)
-
-    x = Conv2D(16, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
-               padding='same', name='Encoder_CONV2D_3')(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU(alpha=leak_alpha)(x)
-    x = MaxPooling2D((2, 2), padding='same')(x)
-    x = Dropout(dropout)(x)
-
-    x = Conv2D(32, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
-               padding='same', name='Encoder_CONV2D_4'
-              , activation='relu')(x)
-    # x = BatchNormalization()(x)
-    # x = LeakyReLU(alpha=leak_alpha)(x)
-    x = MaxPooling2D((2, 2), padding='same')(x)
-
-    x = Conv2D(64, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
-               padding='same', name='Encoder_CONV2D_5'
-              , activation='relu')(x)
-    # x = BatchNormalization()(x)
-    # x = LeakyReLU(alpha=leak_alpha)(x)
-    x = MaxPooling2D((2, 2), padding='same')(x)
-
-    x = Conv2D(128, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
-               padding='same', name='Encoder_CONV2D_6'
-              , activation='relu')(x)
-    # x = BatchNormalization()(x)
-    # x = LeakyReLU(alpha=leak_alpha)(x)
-    x = MaxPooling2D((2, 2), padding='same')(x)
-
-    # at this point the representation is (6, 10, 128)
-
-    x = UpSampling2D((2, 2))(x)
-    x = Conv2D(128, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_6')(x)
-    x = LeakyReLU(alpha=leak_alpha)(x)
-
-    x = UpSampling2D((2, 2))(x)
-    x = Conv2D(32, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_5')(x)
-    x = LeakyReLU(alpha=leak_alpha)(x)
-
-    x = UpSampling2D((2, 2))(x)
-    x = Conv2D(16, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_4')(x)
-    x = LeakyReLU(alpha=leak_alpha)(x)
-
-    x = UpSampling2D((2, 2))(x)
-    x = Conv2D(16, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_3')(x)
-    x = LeakyReLU(alpha=leak_alpha)(x)
-
-    x = UpSampling2D((2, 2))(x)
-    x = Conv2D(8, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_2')(x)
+    x = Conv2D(4, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_2')(x)
     x = LeakyReLU(alpha=leak_alpha)(x)
 
     x = UpSampling2D((2, 2))(x)
@@ -352,70 +283,6 @@ def get_mini_model():
     print("Built model info:\n")
     autoencoder.summary()
     return autoencoder
-
-def get_virgos_model():
-    pool_size = (2, 2)
-    pad = 'same'
-    act = 'relu'
-
-    model = Sequential()
-    model.add(BatchNormalization(input_shape=(img_height, img_width, 1)))
-    model.add(Dropout(0.1))
-
-    model.add(Conv2D(8, (3, 3), padding=pad, activation=act, name = 'Conv1'))
-    model.add(Conv2D(8, (3, 3), padding=pad, activation=act, name = 'Conv2'))
-    model.add(MaxPooling2D(pool_size=pool_size))
-    model.add(Dropout(0.1))
-    model.add(BatchNormalization())
-
-    model.add(Conv2D(16, (3, 3), padding=pad, activation=act, name = 'Conv3'))
-    model.add(Conv2D(16, (3, 3), padding=pad, activation=act, name = 'Conv4'))
-    model.add(MaxPooling2D(pool_size=pool_size))
-    model.add(Dropout(0.1))
-
-    model.add(Conv2D(32, (3, 3), padding=pad, activation=act, name = 'Conv5'))
-    model.add(Conv2D(32, (3, 3), padding=pad, activation=act, name = 'Conv6'))
-    model.add(MaxPooling2D(pool_size=pool_size))
-
-    model.add(Conv2D(64, (3, 3), padding=pad, activation=act, name = 'Conv7'))
-    model.add(Conv2D(64, (3, 3), padding=pad, activation=act, name = 'Conv8'))
-    model.add(MaxPooling2D(pool_size=pool_size))
-
-    model.add(Conv2D(128, (3, 3), padding=pad, activation=act, name = 'Conv9'))
-    model.add(Conv2D(128, (3, 3), padding=pad, activation=act, name = 'Conv10'))
-    model.add(MaxPooling2D(pool_size=pool_size))
-
-    # -------- middle
-    model.add(UpSampling2D(size=pool_size))
-    model.add(Conv2DTranspose(128, (3, 3), padding=pad, activation=act, name = 'Deconv01'))
-    model.add(Conv2DTranspose(128, (3, 3), padding=pad, activation=act, name = 'Deconv02'))
-
-    model.add(UpSampling2D(size=pool_size))
-    model.add(BatchNormalization())
-    model.add(Conv2DTranspose(64, (3, 3), padding=pad, activation=act, name = 'Deconv1'))
-    model.add(Conv2DTranspose(64, (3, 3), padding=pad, activation=act, name = 'Deconv2'))
-
-    model.add(UpSampling2D(size=pool_size))
-    model.add(BatchNormalization())
-    model.add(Conv2DTranspose(32, (3, 3), padding=pad, activation=act, name = 'Deconv3'))
-    model.add(Conv2DTranspose(32, (3, 3), padding=pad, activation=act, name = 'Deconv4'))
-
-    model.add(UpSampling2D(size=pool_size))
-    model.add(Conv2DTranspose(16, (3, 3), padding=pad, activation=act, name = 'Deconv5'))
-    model.add(Conv2DTranspose(16, (3, 3), padding=pad, activation=act, name = 'Deconv6'))
-
-    model.add(UpSampling2D(size=pool_size))
-    model.add(Conv2DTranspose(8, (3, 3), padding=pad, activation=act, name = 'Deconv7'))
-    model.add(Conv2DTranspose(8, (3, 3), padding=pad, activation=act, name = 'Deconv8'))
-
-    # Final layer - only including one channel so 1 filter
-    model.add(Conv2DTranspose(1, (3, 3), padding=pad, activation='sigmoid', name = 'Final'))
-
-    model.compile(optimizer='adadelta', loss='binary_crossentropy',
-                        metrics=['accuracy'])
-    print("Built model info:\n")
-    model.summary()
-    return model
 
 def runPretrain():
     pretrain_data_dirs = [
@@ -486,7 +353,7 @@ def runTraining():
 
 def run_training_on_large_textures(folder, resolution=(1, 1), epochs=1, batch_size=32, iterations=3):
     if not _LOAD_MODEL:
-        vae_roader = get_model()
+        vae_roader = get_tiny_model()
     else:
         vae_roader = load_model(_EXISTING_MODEL_FILENAME)
         print("Model loaded.")
@@ -510,9 +377,9 @@ def run_training_on_large_textures(folder, resolution=(1, 1), epochs=1, batch_si
                            validation_split=0.1,
                            verbose=2)
             del X, Y
-            sleep(2)
+            sleep(1)
             gc.collect()
-            sleep(2)
+            sleep(1)
         vae_roader.save_weights(_WEIGHTS_DIR + 'vae_roader_train_' + str(i) + '.h5')
         vae_roader.save(_MODEL_FILENAME)
 
@@ -525,7 +392,7 @@ if __name__ == "__main__":
         # runTraining()
         run_training_on_large_textures(
             folder='/home/rattus/Projects/PythonNN/datasets/2-TEXTURED',
-            epochs=3,
-            iterations=3,
+            epochs=1,
+            iterations=5,
             batch_size=32)
 

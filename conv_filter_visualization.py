@@ -45,7 +45,7 @@ img_height = img_width # 256  # 128
 channel_count = 1  # 1 for grey, 3 for rgb
 
 
-_MODEL_FILENAME = 'models/mini_model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/tiny_model_yolike_roader.h5'
 model = load_model(_MODEL_FILENAME)
 
 print('Model loaded.')
@@ -61,7 +61,7 @@ layer_dict = dict([(layer.name, layer) for layer in model.layers[0:]])
 def multi_process_filter(iter_functor, kept_filters, kept_filters_lock, input_img_data):
     print('Calculating gradients...')
     step = 1
-    gradient_steps = 100
+    gradient_steps = 150
     # we run gradient ascent for N steps
     for i in range(gradient_steps):
         loss_value, grads_value = iter_functor([input_img_data])
@@ -135,7 +135,7 @@ def plotFiltersFor(layer_name, filter_count=8):
     kept_filters_lock = Lock()
 
     total_filters = filter_count
-    gradient_steps = 200
+    gradient_steps = 50
 
     # we start from a gray image with some random noise
     if K.image_data_format() == 'channels_first':
@@ -225,12 +225,16 @@ def plotFiltersFor(layer_name, filter_count=8):
 # the name of the layer we want to visualize
 # (see model definition at keras/applications/vgg16.py)
 layer_names = [
-                ['Encoder_CONV2D_6', 96],
-                ['Encoder_CONV2D_5', 64],
-                #['Encoder_CONV2D_4', 32],
-                #['Encoder_CONV2D_3', 16],
-                #['Encoder_CONV2D_2', 4],
-                #['Encoder_CONV2D_1', 4],
+                ['Encoder_CONV2D_6', 64],
+                # ['Encoder_CONV2D_6a', 64],
+                # ['Encoder_CONV2D_6b', 64],
+                # ['Encoder_CONV2D_5', 32],
+                # ['Encoder_CONV2D_5a', 32],
+                # ['Encoder_CONV2D_5b', 32],
+                # ['Encoder_CONV2D_4', 32],
+                # ['Encoder_CONV2D_3', 16],
+                # ['Encoder_CONV2D_2', 16],
+                # ['Encoder_CONV2D_1', 16],
 
                 #['Decoder_CONV2D_1', 8],
                 #['Decoder_CONV2D_2', 16],

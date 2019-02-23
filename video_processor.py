@@ -5,14 +5,14 @@ import time
 import os
 import datetime
 
-_MODEL_FILENAME = 'models/mini_model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/tiny_model_yolike_roader.h5'
 
 _STACK_PREDICTIONS = False
 _STACK_DEPTH = 10
 _STACK_DECAY = 0.5
 
-_FRAME_DIVIDER = 1
-_TOTAL_FRAMES = 5000
+_FRAME_DIVIDER = 3
+_TOTAL_FRAMES = 200
 
 class RoadDetector:
     model = Sequential()
@@ -204,15 +204,15 @@ def process_video(paths):
 
 if __name__ == '__main__':
     process_video([
-                    # 'video/road16.mp4',
-                    # 'video/road15.mp4',
-                    # 'video/road9.mp4',
-                    # 'video/road10.mp4',
-                    # 'video/road11.mp4',
-                    # 'video/road12.mp4',
-                    # 'video/road13.mp4',
-                    # 'video/road14.mp4',
-                    # 'video/road1.mp4',
+                    'video/road9.mp4',
+                    'video/road16.mp4',
+                    'video/road15.mp4',
+                    'video/road10.mp4',
+                    #'video/road11.mp4',
+                    'video/road12.mp4',
+                    #'video/road13.mp4',
+                    #'video/road14.mp4',
+                    'video/road1.mp4',
                     # 'video/noroad_1.mp4',
                     # 'video/road2.mp4',
                     # 'video/noroad_2.mp4',
@@ -234,6 +234,6 @@ if __name__ == '__main__':
                     # 'video/test/test-road-1.mp4',
                     # 'video/test/test-road-2.mp4',
                     # 'video/test/test-road-3.mp4',
-                    # 'video/kiev/kiev2.mp4',
+                    'video/kiev/kiev2.mp4',
                     'video/kiev/kiev5.mp4',
     ])

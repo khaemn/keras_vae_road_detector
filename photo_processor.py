@@ -65,7 +65,7 @@ def processPhotos(input_dir=_INPUT_DIR, out_dir=_OUT_DIR):
 
 if __name__ == '__main__':
     dirs = [
-            '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part2',
+            # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part2',
             # '/home/rattus/Projects/PythonNN/datasets/downloaded-assorted',
             # '/home/rattus/Projects/PythonNN/datasets/nexet_example',
             # '/home/rattus/Projects/PythonNN/datasets/noroad-maskeds',
@@ -76,7 +76,7 @@ if __name__ == '__main__':
             # '/home/rattus/Projects/PythonNN/datasets/road6-reduced',
             # '/home/rattus/Projects/PythonNN/datasets/road8-maskeds',
             # '/home/rattus/Projects/PythonNN/datasets/road9-maskeds',
-            # '/home/rattus/Projects/PythonNN/datasets/road10-maskeds',
+            '/home/rattus/Projects/PythonNN/datasets/road10-maskeds',
             # '/home/rattus/Projects/PythonNN/datasets/road71-maskeds',
             # '/home/rattus/Projects/PythonNN/datasets/road-4-12-15-gen'
 
@@ -87,7 +87,8 @@ if __name__ == '__main__':
             # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fkievvid',
            ]
     #out_dir = '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fkievvid'
-    out_dir = '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part2'
+    # out_dir = '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part2'
+    out_dir = '/home/rattus/Projects/PythonNN/datasets/road10-maskeds'
     for d in dirs:
         path = os.path.join(d, 'images')
         out_path = os.path.join(d, 'gen-masks')
