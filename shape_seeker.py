@@ -12,7 +12,7 @@ import datetime
 # https://stackoverflow.com/questions/41879315/opencv-using-cv2-approxpolydp-correctly
 # https://www.pyimagesearch.com/2016/04/11/finding-extreme-points-in-contours-with-opencv/
 
-_MODEL_FILENAME = 'models/cl_model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/micro_model_yolike_roader.h5'
 _INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/downloaded-assorted/masks/'
 _OUT_DIR = '/home/rattus/Projects/PythonNN/datasets/downloaded-assorted/genmasks/'
 _SHOW = False
@@ -213,13 +213,13 @@ def process_videos(paths):
                                     masking_max,
                                     cv2.THRESH_BINARY)
 
-            #outline = getRoadOutline(mask)
-            #outline_poly = np.zeros_like(mask, dtype='uint8')
-            #cv2.drawContours(outline_poly, outline, -1, (255), 2)
-            #if len(outline) > 3:
-            #cv2.fillPoly(outline_poly, outline, 255, 2)
-            #cv2.imshow("OPOly", outline_poly)
-            #cv2.waitKey(0)
+            outline = getRoadOutline(mask)
+            outline_poly = np.zeros_like(mask, dtype='uint8')
+            cv2.drawContours(outline_poly, outline, -1, (255), 2)
+            if len(outline) > 3:
+                cv2.fillPoly(outline_poly, outline, 255, 2)
+                cv2.imshow("OPOly", outline_poly)
+                cv2.waitKey(0)
             # outline = np.zeros(mask)
 
             lefts, centers, rights = getVerticalMiddleSplittingLine(mask)

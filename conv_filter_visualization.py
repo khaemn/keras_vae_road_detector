@@ -45,7 +45,7 @@ img_height = img_width # 256  # 128
 channel_count = 1  # 1 for grey, 3 for rgb
 
 
-_MODEL_FILENAME = 'models/tiny_model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/micro_model_yolike_roader.h5'
 model = load_model(_MODEL_FILENAME)
 
 print('Model loaded.')
@@ -87,10 +87,10 @@ def process_filter(layer_name, filter_index, total_filters, kept_filters, kept_f
     # we build a loss function that maximizes the activation
     # of the nth filter of the layer considered
     layer_output = layer_dict[layer_name].output
-    # if K.image_data_format() == 'channels_first':
-    #     loss = K.mean(layer_output[:, filter_index, :, :])
-    # else:
-    loss = K.mean(layer_output[:, :, :, filter_index])
+    if K.image_data_format() == 'channels_first':
+        loss = K.mean(layer_output[:, filter_index, :, :])
+    else:
+        loss = K.mean(layer_output[:, :, :, filter_index])
 
     print('Getting gradients...')
     # we compute the gradient of the input picture wrt this loss
@@ -129,7 +129,7 @@ def process_filter(layer_name, filter_index, total_filters, kept_filters, kept_f
     print('Filter %d processed in %d s' % (filter_index, end_time - start_time))
     return
 
-def plotFiltersFor(layer_name, filter_count=8):
+def plotFiltersFor(layer_name, filter_count=8, image_size=100):
 
     kept_filters = []
     kept_filters_lock = Lock()
@@ -139,9 +139,9 @@ def plotFiltersFor(layer_name, filter_count=8):
 
     # we start from a gray image with some random noise
     if K.image_data_format() == 'channels_first':
-        origin_input_img_data = np.random.random((1, channel_count, img_width, img_height))
+        origin_input_img_data = np.random.random((1, channel_count, image_size, image_size))
     else:
-        origin_input_img_data = np.random.random((1, img_width, img_height, channel_count))
+        origin_input_img_data = np.random.random((1, image_size, image_size, channel_count))
     origin_input_img_data = (origin_input_img_data - 0.5) * 20 + 128
 
     executor = ThreadPoolExecutor(max_workers=16)
@@ -156,41 +156,10 @@ def plotFiltersFor(layer_name, filter_count=8):
                        kept_filters_lock,
                        origin_input_img_data.copy(),
                        gradient_steps)
-    #     print('Processing filter %d of %d' % (filter_index, total_filters))
-    #     # we build a loss function that maximizes the activation
-    #     # of the nth filter of the layer considered
-    #     layer_output = layer_dict[layer_name].output
-    #     # if K.image_data_format() == 'channels_first':
-    #     #     loss = K.mean(layer_output[:, filter_index, :, :])
-    #     # else:
-    #     loss = K.mean(layer_output[:, :, :, filter_index])
-    #
-    #     print('Getting gradients...')
-    #     # we compute the gradient of the input picture wrt this loss
-    #     grads = K.gradients(loss, input_img)[0]
-    #
-    #     # normalization trick: we normalize the gradient
-    #     grads = normalize(grads)
-    #
-    #     # this function returns the loss and grads given the input picture
-    #     iterate = K.function([input_img], [loss, grads])
-    #     print('Submitting filter %d of %d' % (filter_index, total_filters))
-    #     tasks.append(executor.submit(
-    #         multi_process_filter,
-    #         iterate,
-    #         kept_filters,
-    #         kept_filters_lock,
-    #         origin_input_img_data.copy()))
-    # print("Tasks for this layer:" % len(tasks))
-    #
-    # # Wait the executor to complete each future, give 180 seconds for each job
-    # for idx, future in enumerate(as_completed(tasks, timeout=180.0)):
-    #     res = future.result()  # This will also raise any exceptions
-    #     print("Processed job", idx, "result", res)
 
     print("Total %d filters kept for layer %s" % (len(kept_filters), layer_name))
     # we will stitch the best 64 filters on a 8 x 8 grid.
-    n = max(1, int(math.sqrt(abs(len(kept_filters) - 1))))
+    n = max(1, int(math.sqrt(abs(len(kept_filters)))))
 
     # the filters that have the highest loss are assumed to be better-looking.
     # we will only keep the top 64 filters.
@@ -199,9 +168,9 @@ def plotFiltersFor(layer_name, filter_count=8):
 
     # build a black picture with enough space for
     # our 8 x 8 filters of size 128 x 128, with a 5px margin in between
-    margin = 5
-    width = n * img_width + (n - 1) * margin
-    height = n * img_height + (n - 1) * margin
+    margin = 1
+    width = n * image_size + (n - 1) * margin
+    height = n * image_size + (n - 1) * margin
     stitched_filters = np.zeros((width, height, 3))
 
     print("Maximum influence from kept filters:", len(kept_filters))
@@ -211,11 +180,11 @@ def plotFiltersFor(layer_name, filter_count=8):
             for j in range(n):
                 _index = i * n + j
                 img, loss = kept_filters[_index]
-                width_margin = (img_width + margin) * i
-                height_margin = (img_height + margin) * j
+                width_margin = (image_size + margin) * i
+                height_margin = (image_size + margin) * j
                 stitched_filters[
-                    width_margin: width_margin + img_width,
-                    height_margin: height_margin + img_height, :] = img
+                    width_margin: width_margin + image_size,
+                    height_margin: height_margin + image_size, :] = img
 
     # save the result to disk
     save_img('filters/' + layer_name + ('_stitched_filters_%dx%d.png' % (n, n)), stitched_filters)
@@ -223,27 +192,28 @@ def plotFiltersFor(layer_name, filter_count=8):
     del stitched_filters
 
 # the name of the layer we want to visualize
-# (see model definition at keras/applications/vgg16.py)
 layer_names = [
-                ['Encoder_CONV2D_6', 64],
-                # ['Encoder_CONV2D_6a', 64],
-                # ['Encoder_CONV2D_6b', 64],
-                # ['Encoder_CONV2D_5', 32],
-                # ['Encoder_CONV2D_5a', 32],
-                # ['Encoder_CONV2D_5b', 32],
-                # ['Encoder_CONV2D_4', 32],
-                # ['Encoder_CONV2D_3', 16],
-                # ['Encoder_CONV2D_2', 16],
-                # ['Encoder_CONV2D_1', 16],
+                ['Encoder_CONV2D_6', 100, 300],
+                # ['Encoder_CONV2D_6b', 64, 300],
+                # ['Encoder_CONV2D_6a', 64, 300],
+                ['Encoder_CONV2D_5', 64, 200],
+                # ['Encoder_CONV2D_5b', 32, 200],
+                # ['Encoder_CONV2D_5a', 32, 200],
+                ['Encoder_CONV2D_4', 32, 160],
+                # ['Encoder_CONV2D_4b', 32, 160],
+                # ['Encoder_CONV2D_4a', 32, 160],
+                ['Encoder_CONV2D_3', 16, 80],
+                ['Encoder_CONV2D_2', 16, 40],
+                ['Encoder_CONV2D_1', 16, 20],
 
-                #['Decoder_CONV2D_1', 8],
-                #['Decoder_CONV2D_2', 16],
-                #['Decoder_CONV2D_3', 32],
-                #['Decoder_CONV2D_4', 32],
-                #['Decoder_CONV2D_5', 32],
-                #['Decoder_CONV2D_6', 32],
+                ['Decoder_CONV2D_6', 100, 300],
+                # ['Decoder_CONV2D_5', 32, 100],
+                # ['Decoder_CONV2D_4', 16, 100],
+                # ['Decoder_CONV2D_3', 16, 100],
+                # ['Decoder_CONV2D_2', 16, 100],
+                # ['Decoder_CONV2D_1', 16, 100],
                ]
 
 for lname in layer_names:
-    plotFiltersFor(lname[0], lname[1])
+    plotFiltersFor(lname[0], lname[1], lname[2])
 

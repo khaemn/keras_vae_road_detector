@@ -819,3 +819,102 @@ def get_mini_model():
     print("Built model info:\n")
     autoencoder.summary()
     return autoencoder
+
+
+def get_pipe_model():
+    print("Building model ...")
+    model_init = "he_uniform"
+    leak_alpha = 0.1
+    dropout = 0.1
+
+    # input_img = Input(shape=(img_height, img_width, 3))  # adapt this if using `channels_first` image data format
+    input_img = Input(shape=(img_height, img_width, 1))  # adapt this if using `channels_first` image data format
+
+    x = Conv2D(16, (3, 3), kernel_initializer=model_init, # trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_1')(input_img)
+    x = BatchNormalization()(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
+    x = MaxPooling2D((2, 2), padding='same')(x)
+    x = Dropout(dropout)(x)
+
+    x = Conv2D(16, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_2')(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
+    x = MaxPooling2D((2, 2), padding='same')(x)
+    x = Dropout(dropout)(x)
+
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_3')(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
+    x = MaxPooling2D((2, 2), padding='same')(x)
+    x = Dropout(dropout)(x)
+
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_4a'
+              , activation='relu')(x)
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_4b'
+              , activation='relu')(x)
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_4c'
+              , activation='relu')(x)
+    x = MaxPooling2D((2, 2), padding='same')(x)
+
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_5a'
+              , activation='relu')(x)
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_5b'
+              , activation='relu')(x)
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_5c'
+              , activation='relu')(x)
+    x = MaxPooling2D((2, 2), padding='same')(x)
+
+    x = Conv2D(64, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_6a'
+              , activation='relu')(x)
+    x = Conv2D(64, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_6b'
+              , activation='relu')(x)
+    x = Conv2D(64, (3, 3), kernel_initializer=model_init,  #trainable=_PRETRAIN,
+               padding='same', name='Encoder_CONV2D_6c'
+              , activation='relu')(x)
+    x = MaxPooling2D((2, 2), padding='same')(x)
+
+    # at this point the representation is (6, 10, 128)
+
+    x = UpSampling2D((2, 2))(x)
+    x = Conv2D(64, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_6')(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
+
+    x = UpSampling2D((2, 2))(x)
+    x = Conv2D(64, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_5')(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
+
+    x = UpSampling2D((2, 2))(x)
+    x = Conv2D(32, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_4')(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
+
+    x = UpSampling2D((2, 2))(x)
+    x = Conv2D(8, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_3')(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
+
+    x = UpSampling2D((2, 2))(x)
+    x = Conv2D(4, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_2')(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
+
+    x = UpSampling2D((2, 2))(x)
+    x = Conv2D(4, (3, 3), kernel_initializer=model_init, padding='same', name='Decoder_CONV2D_1')(x)
+    x = LeakyReLU(alpha=leak_alpha)(x)
+
+    decoded = Conv2D(1, (3, 3), activation='sigmoid', kernel_initializer=model_init, padding='same')(x)
+
+    autoencoder = Model(input_img, decoded)
+    autoencoder.compile(optimizer='adadelta', loss='binary_crossentropy',
+                        metrics=['accuracy'])
+    print("Built model info:\n")
+    autoencoder.summary()
+    return autoencoder

@@ -14,8 +14,8 @@ from dataset_generator import generate_noise
 _INPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/1-OUT'
 _OUTPUT_DIR = '/home/rattus/Projects/PythonNN/datasets/2-TEXTURED'
 
-_H_COUNT = 30
-_V_COUNT = 90
+_H_COUNT = 50
+_V_COUNT = 60
 _DATA_BATCH_SIZE = _V_COUNT * _H_COUNT
 
 _IMG_WIDTH = 320 * 2  # 160  # 320
@@ -73,7 +73,7 @@ def compile_batches(shape=(_H_COUNT, _V_COUNT), input_dir=_INPUT_DIR, output_dir
 
 if __name__ == "__main__":
     compile_batches()
-    compile_batches(shape=(6, 6),
-                    output_dir='/home/rattus/Projects/PythonNN/datasets/1-OUT',
-                    input_dir='/home/rattus/Projects/PythonNN/datasets/3-TEST',
-                    append_noise=False)
+    # compile_batches(shape=(6, 6),
+    #                 output_dir='/home/rattus/Projects/PythonNN/datasets/1-OUT',
+    #                 input_dir='/home/rattus/Projects/PythonNN/datasets/2-TEXTURED',
+    #                 append_noise=False)
