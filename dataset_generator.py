@@ -120,7 +120,9 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT),
         assert x_img.shape == y_img.shape
 
         x_resized = cv2.resize(x_img, (gen_w, gen_h), interpolation=cv2.INTER_LINEAR)
-        x_resized = cv2.equalizeHist(x_resized)
+        # x_resized = cv2.equalizeHist(x_resized)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        x_resized = clahe.apply(x_resized)
         y_resized = cv2.resize(y_img, (gen_w, gen_h), interpolation=cv2.INTER_LINEAR)
 
         output = np.zeros((gen_h, gen_w * 2), dtype='uint8')
@@ -135,6 +137,7 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT),
         _SWAP_HALVES = augmenting
         _FLIP_HORIZ = augmenting
         _SWAP_VERT_HALVES = augmenting
+        _EXTRACT_CENTER = augmenting
 
         if _SWAP_HALVES:
             hor_middle = int(gen_w / 2)
@@ -186,6 +189,35 @@ def generate_dataset(resolution=(_X_WIDTH, _X_HEIGHT),
             output_path = os.path.join(out_path, 'hor-flip-' + filename)
             f_horflipped.save(output_path)
             print("    Horizontal flipping output")
+
+        if _EXTRACT_CENTER:
+            extraction_factor = 3
+            extraction_w = origin_w // extraction_factor
+            extraction_h = origin_h // extraction_factor
+            x_offs = (origin_w - extraction_w) // 2
+            y_offs = (origin_h - extraction_h) // 2
+            centr_x = x_img[y_offs:y_offs+extraction_h, x_offs:x_offs+extraction_w]
+            centr_x = cv2.resize(centr_x, (gen_w, gen_h))
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+            centr_x = clahe.apply(centr_x)
+            centr_y = y_img[y_offs:y_offs + extraction_h, x_offs:x_offs + extraction_w]
+            centr_y = cv2.resize(centr_y, (gen_w, gen_h))
+            centered = np.zeros((gen_h, gen_w * 2), dtype='uint8')
+            centered[:, :gen_w] = centr_x
+            centered[:, gen_w:] = centr_y
+            f_centered = Image.fromarray(centered)
+            output_path = os.path.join(out_path, 'center-' + filename)
+            f_centered.save(output_path)
+            print("    Extracted center output")
+            centr_x = cv2.flip(centr_x, 1)
+            centr_y = cv2.flip(centr_y, 1)
+            centered[:, :gen_w] = centr_x
+            centered[:, gen_w:] = centr_y
+            f_centered = Image.fromarray(centered)
+            output_path = os.path.join(out_path, 'center-horflip-' + filename)
+            f_centered.save(output_path)
+            print("    Extracted center horflip output")
+
     return total_files
 
 
@@ -203,7 +235,7 @@ if __name__ == '__main__':
                                 # '/home/rattus/Projects/PythonNN/datasets/road2and5-maskeds',
                                 # '/home/rattus/Projects/PythonNN/datasets/road3-maskeds',
                                 # '/home/rattus/Projects/PythonNN/datasets/road4-maskeds',
-                                '/home/rattus/Projects/PythonNN/datasets/road6-reduced',
+                                # '/home/rattus/Projects/PythonNN/datasets/road6-reduced',
                                 # '/home/rattus/Projects/PythonNN/datasets/road8-maskeds',
                                 # '/home/rattus/Projects/PythonNN/datasets/road9-maskeds',
                                 # '/home/rattus/Projects/PythonNN/datasets/road10-maskeds',
@@ -215,14 +247,15 @@ if __name__ == '__main__':
                                 # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_4',
                                 # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_5',
                                 # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fvid/from_vid_7',
-                                # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part1'
-                                # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part3',
+                                '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part1',
+                                '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part3',
 
                                 # Test!!!;
                                 # '/home/rattus/Projects/PythonNN/datasets/downloaded-assorted'
-                                # '/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fkievvid',
+                                #'/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/fkievvid',
                                ],
                        out_dir='/home/rattus/Projects/PythonNN/datasets/1-OUT')
+                       # out_dir = '/home/rattus/Projects/PythonNN/datasets/3-TEST')
                     # out_dir='/media/rattus/40F00470F0046F0A/Datasets/vae_roader_custom/nexet3-day-part3')
                        # out_dir = '/home/rattus/Projects/PythonNN/datasets/downloaded-assorted/data')
 

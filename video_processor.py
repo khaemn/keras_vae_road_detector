@@ -5,7 +5,7 @@ import time
 import os
 import datetime
 
-_MODEL_FILENAME = 'models/micro_model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/model_vae_roader.h5'
 
 _STACK_PREDICTIONS = False
 _STACK_DEPTH = 10
@@ -17,7 +17,7 @@ _TOTAL_FRAMES = 2000
 class RoadDetector:
     model = Sequential()
     max_RGB = 255
-
+    cv2.CAP_PROP_FRAME_COUNT
     input_height = 180  # 90
     input_width = 320  # 160
     # N thresholds will produce N masks of N colors
@@ -35,7 +35,9 @@ class RoadDetector:
         else:
             resized = _input
         # Gamma preprocessing to increase sensitivity
-        normalized = cv2.equalizeHist(resized)
+        # normalized = cv2.equalizeHist(resized)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        normalized = clahe.apply(resized)
         # Normalization
         normalized = normalized / self.max_RGB
         # Prediction
@@ -204,25 +206,25 @@ def process_video(paths):
 
 if __name__ == '__main__':
     process_video([
-                    'video/road10.mp4',
-                    'video/road9.mp4',
+                    # 'video/road10.mp4',
+                    # 'video/road9.mp4',
                     'video/road16.mp4',
                     'video/road15.mp4',
-                    'video/road11.mp4',
-                    'video/road12.mp4',
-                    'video/road13.mp4',
-                    'video/road14.mp4',
-                    'video/road1.mp4',
-                    'video/noroad_1.mp4',
-                    'video/road2.mp4',
-                    'video/noroad_2.mp4',
-                    'video/road3.mp4',
-                    'video/noroad_3.mp4',
-                    'video/road4.mp4',
+                    # 'video/road11.mp4',
+                    # 'video/road12.mp4',
+                    # 'video/road13.mp4',
+                    # 'video/road14.mp4',
+                    # 'video/road1.mp4',
+                    # 'video/noroad_1.mp4',
+                    # 'video/road2.mp4',
+                    # 'video/noroad_2.mp4',
+                    # 'video/road3.mp4',
+                    # 'video/noroad_3.mp4',
+                    # 'video/road4.mp4',
                     # 'video/noroad_4.mp4',
                     # 'video/road5.mp4',
                     # 'video/noroad_5.mp4',
-                    # 'video/road6.mp4',
+                    'video/road6.mp4',
                     # 'video/noroad_6.mp4',
                     # 'video/road7.mp4',
                     # 'video/noroad_7.mp4',

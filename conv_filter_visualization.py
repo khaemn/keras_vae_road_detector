@@ -45,7 +45,7 @@ img_height = img_width # 256  # 128
 channel_count = 1  # 1 for grey, 3 for rgb
 
 
-_MODEL_FILENAME = 'models/micro_model_yolike_roader.h5'
+_MODEL_FILENAME = 'models/ext2_model_yolike_roader.h5'
 model = load_model(_MODEL_FILENAME)
 
 print('Model loaded.')
@@ -193,7 +193,7 @@ def plotFiltersFor(layer_name, filter_count=8, image_size=100):
 
 # the name of the layer we want to visualize
 layer_names = [
-                ['Encoder_CONV2D_6', 100, 300],
+                ['Encoder_CONV2D_6', 128, 300],
                 # ['Encoder_CONV2D_6b', 64, 300],
                 # ['Encoder_CONV2D_6a', 64, 300],
                 ['Encoder_CONV2D_5', 64, 200],
@@ -206,7 +206,7 @@ layer_names = [
                 ['Encoder_CONV2D_2', 16, 40],
                 ['Encoder_CONV2D_1', 16, 20],
 
-                ['Decoder_CONV2D_6', 100, 300],
+                ['Decoder_CONV2D_6', 128, 300],
                 # ['Decoder_CONV2D_5', 32, 100],
                 # ['Decoder_CONV2D_4', 16, 100],
                 # ['Decoder_CONV2D_3', 16, 100],
